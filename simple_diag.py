@@ -6,13 +6,13 @@ import time
 # from scipy.sparse.linalg import eigs
 
 # parameters
-t = 1.0 # Assume nn hopping term to be isotropic and constant for all lattice points
-U = 5 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
+t = 1.0 # Assume nn hopping term to be isotropic and constant for all lattice points. Set all quantities from this
+U = 1.9 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
 
-Deltag = 0.1 * t  # Assume constant Delta. First guess, will be updated self-consistently
+Deltag = 0.001 * t  # Assume constant Delta. First guess, will be updated self-consistently
 
-mu =- 0.5*t # So far, constant chemical potential
-mg = 5.0 * t 
+mu = - 0.5*t # So far, constant chemical potential
+mg = 0.8* t
 
 sigmax = np.array([[0, 1],
                    [1, 0]], dtype = complex)
@@ -163,17 +163,18 @@ def make_H_periodic_2d_nambu_skewed(Nx, Ny,  Deltag):
                 else:
                     # Delta = Deltag
                     m = 0
+
                 H[i, i] = np.block([[mu*I2  + mz *sigmaz, Deltag_arr[iy, ix] * (-1j * sigmay)],
                                     [np.conjugate(Deltag_arr[iy, ix])*1j*sigmay, - mu*I2 - mz *sigmaz]]) # lower right component should be cc
                 
 
                 # x hopping, m = + mg
-                if (ix < Nx - 1 or iy % 2 ==0) and iy > 0:
+                if (ix < Nx - 1 or iy % 2 ==1) and iy > 0:
                     # to the right
                     H[i, i - Nx + 1] = np.block([[t * I2 + m*sigmaz , 0 * I2],
                                             [0 * I2, -t * I2 - m*sigmaz]])
                     
-                if (ix > 0 or iy %2 ==1) and iy < Ny - 1  :
+                if (ix > 0 or iy %2 ==1) and iy < Ny - 1:
                     # To the left
                     H[i, i + Nx ] = np.block([[t * I2 + m*sigmaz , 0 * I2],
                                                  [0 * I2, -t * I2 - m*sigmaz]])
@@ -186,7 +187,7 @@ def make_H_periodic_2d_nambu_skewed(Nx, Ny,  Deltag):
                     H[i, i - Nx ] = np.block([[t * I2 + m*sigmaz , 0 * I2],
                                                  [0 * I2, -t * I2 - m*sigmaz]])
                 
-                if  (ix < Nx -1 or iy %2 ==0) and iy < Ny - 1:
+                if  (ix < Nx -1 or iy %2 ==1) and iy < Ny - 1:
                     # Up
                     H[i, i + Nx] = np.block([[t * I2 + m*sigmaz , 0 * I2],
                                              [0 * I2, -t * I2 - m*sigmaz]])
@@ -244,7 +245,7 @@ def calc_Delta_sc(Nx, Ny, Deltag, tol, T, skewed = False):
 def calc_Tc(Nx, Ny, Deltag, skewed = False):
     nTs = 50
     Deltas = np.zeros((nTs))
-    Ts = np.linspace(0.0001*t, 1.5*t, nTs)
+    Ts = np.linspace(0.0001*t, 0.5*t, nTs)
     found = False
     for i, T in enumerate(Ts):
         print(f"Checking for T = {T}")
@@ -256,20 +257,28 @@ def calc_Tc(Nx, Ny, Deltag, skewed = False):
             print(f" No sc at T = {T}")
         
     
-    return Tc, Ts, Deltas
+            return Tc, Ts, Deltas, Delta_i
+
+    print(" Too low range, no cutoff found")
         
 
-Nx = 20
-Ny = 10
-
-T,Ts,  Deltas = calc_Tc(Nx, Ny, Deltag, skewed = True)
+Nx = 15
+Ny = 20
+skewed = True
+print("Eunning for skewed = ", skewed)
+T,Ts,  Deltas, Delta_i = calc_Tc(Nx, Ny, Deltag, skewed = skewed)
 plt.xlabel("T/t")
 plt.ylabel(r"$\Delta_{avr}$ / t")
 plt.plot(Ts, Deltas)
-plt.savefig("skewed_singlet")
-plt.show()
-tic = time.time() 
+# plt.savefig("only_sc_singlet")
+# plt.savefig("straight_singlet")
+# plt.savefig("skewed_singlet")
 
+plt.show()
+
+plt.imshow(np.abs(Delta_i.reshape(Ny, Nx)), origin = "upper")
+plt.colorbar()
+plt.show()
 # Hs = sparse.lil_matrix((4*Nx*Ny, 4*Nx*Ny), dtype = complex)#, dtype= np.float32)
 
 # H = unpack_block_matrix(H4, Nx, Ny)
@@ -286,12 +295,6 @@ tic = time.time()
 # u_dn = gamma[1::4, :]
 # v_up = gamma[2::4, :]
 # v_dn = gamma[3::4, :]
-
-# Delta_i = Delta_sc(gamma, D, U)
-# plt.plot(np.abs(Delta_i))
-# plt.show()
-
-
 
 # Self-consistent:
 
