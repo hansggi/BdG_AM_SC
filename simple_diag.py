@@ -270,51 +270,56 @@ def Ldos(gamma, D):
 
     return s
 
-Nx = 12
-Ny = 12
-skewed = True
+Nx = 35
+Ny = 30
+skewed = False
 t = 1.0 # Assume nn hopping term to be isotropic and constant for all lattice points. Set all quantities from this
-U = 2 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
-Deltag =  1e-5 # Assume constant Delta. First guess, will be updated self-consistently
-mu =  - 0.5*t # So far, constant chemical potential
+U = 1.8 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
+Deltag =  1e-5 #  First guess: constant, small Delta inside the SC, will be updated self-consistently
+mu =   -0.5*t # So far, constant chemical potential
 # mz = 0. # Ferromagetism in the AM
 # mg = 0
-num_sweep_vals = 20
+num_sweep_vals = 1
 tic = time.time()
 # mg = 0
 mz = 0
-bd = Nx//2
+bd = Nx//7
 mgs = np.linspace(0., 1.5, num_sweep_vals)
 # mzs = np.linspace(0, 0.5, num_sweep_vals)
 Tcs = np.zeros(num_sweep_vals)
 Tc0 = 0.3
 
-
 tic = time.time()
 fnum = 0
-fig, ax = plt.subplots(nrows = 3, ncols= 1)
+fig, ax = plt.subplots(nrows = 1, ncols= 1)
 
 for i, mg in enumerate(mgs):
     print("Running for mg = ", mg)
     param = (t, U, mu, mg, mz)
-    if i == 0 or i == num_sweep_vals -1 or i == num_sweep_vals//2:
+    if i == 0: #or i == num_sweep_vals -1 or i == num_sweep_vals//2:
         # Basically zero termperature, and low tolerance
         Delta_i, gamma, D = calc_Delta_sc(Nx, Ny, Deltag, 0.000001, 0.01, param, bd,  skewed=skewed) #tol, T
         Delta_i = Delta_i.reshape((Ny, Nx))
         print(np.amax(np.abs(Delta_i)))
-        im = ax[fnum].imshow(np.abs(Delta_i), aspect="auto")
-        ax[fnum].set_title((f"mg = {mg:.1f}"))
-        fig.colorbar(im, ax=ax[fnum])
+        im = ax.imshow(np.abs(Delta_i), aspect="auto")
+        ax.set_title((f"mg = {mg:.1f}"))
+        fig.colorbar(im, ax=ax)
         fnum += 1
 
-    Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed = skewed)
-    Tcs[i] = Tc
+    # Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed = skewed)
+    # Tcs[i] = Tc
 
+print(f"took {time.time()- tic} seconds")
+
+xi = np.sqrt(2 * np.abs(mu)) / np.pi /np.amax(np.abs(Delta_i))    # First factor is k_F
+print("Coherence length: ", xi)
 # fig.colorbar(im, ax=ax.ravel().tolist())
 fig.suptitle(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mz ={mz:.1f}")
 plt.show()
 
-print(f"took {time.time()- tic} seconds")
+plt.plot(D)
+plt.show()
+
 plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mg={mg:.1f}")
 plt.xlabel("m/t")
 plt.ylabel("Tc")
