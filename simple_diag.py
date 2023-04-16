@@ -12,14 +12,14 @@ from funcs import make_sigmas, nb_block, nb_block2, make_H_numba, f, Delta_sc, u
 from multiprocessing import Pool
 # print("Number of cpuf : ", multiprocessing.cpu_count())
 
-def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1,  skewed = False):
+def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
     t, U, mu, mg, mz = param
     num_it = 5
 
     done = False
     Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)
-    Delta_arr[:, :Nx//2] = 0
+    Delta_arr[:, :bd] = 0
 
     it = 0
     while not done:
@@ -31,7 +31,7 @@ def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1,  skewed = False):
             # Deltag = np.sum(np.abs(Delta_arr))/ ( Nx * Ny / 2)
 
         else:
-            H = make_H_numba_boundaryjumping(Nx, Ny, Delta_arr, param, bd,  skewed = skewed)
+            H = make_H_numba(Nx, Ny, Delta_arr, param, bd,  skewed = skewed)
             # print(np.allclose(H, np.conjugate(H).T))
             D, gamma = np.linalg.eigh(H)
 
@@ -39,8 +39,10 @@ def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1,  skewed = False):
 
             Delta_arr = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
 
-        
-        Delta_bulk = np.abs(Delta_arr)[Ny//2, - Nx // 4]
+        if bd ==0:
+            Delta_bulk = np.abs(Delta_arr)[Ny//2, - Nx // 2]
+        else: 
+            Delta_bulk = np.abs(Delta_arr)[Ny//2, - Nx // 4]
         it += 1
         
         if it > num_it and Delta_bulk > Deltag :
@@ -65,8 +67,11 @@ def calc_Delta_sc(Nx, Ny, Deltag, tol, T, param, bd,  skewed):
     it = 0
 
     while not done:
-        H = make_H_numba_boundaryjumping(Nx, Ny, Delta_old_arr, param, bd, skewed = skewed)
-
+        H = make_H_numba(Nx, Ny, Delta_old_arr, param, bd, skewed = skewed)
+        # print(np.allclose(H, np.conjugate(H).T))
+        # plt.imshow(np.abs(H[::4, ::4]))
+        # plt.colorbar()
+        # plt.show()
         # Sparse --------------------------------------------------------------------------
         # num_eigvals = 5
         # sH = sparse.csr_matrix(H)  # NB, seems H is not Hermitian, which is not good
@@ -98,14 +103,24 @@ def calc_Delta_sc(Nx, Ny, Deltag, tol, T, param, bd,  skewed):
 
         Delta_new_i = Delta_sc(gamma, D, U, T, Nx, Ny, bd)
         Delta_new = Delta_new_i.reshape(Ny, Nx)
-        Delta_bulk = np.abs(Delta_new)[Ny//2, - Nx//4]
+        if bd == 0:
+            Delta_bulk = np.abs(Delta_new)[Ny//2, - Nx//2]
+        else:
+            Delta_bulk = np.abs(Delta_new)[Ny//2, - Nx//4]
         it += 1
+        # Bulk method
         if np.abs(np.abs(Delta_bulk) - np.abs(Delta_old_bulk))  <= tol :
             done = True
 
+        # Using max difference instead. Will not give the same plot as in the article, since T is a function of bulk Tc here
+        # if np.amax(np.abs(np.abs(Delta_bulk) - np.abs(Delta_old_bulk)))  <= tol :
+        #     done = True
         Delta_old = Delta_new
         Delta_old_arr = Delta_new
-        Delta_old_bulk = np.abs(Delta_old[Ny//2, - Nx//4])
+        if bd == 0:
+            Delta_old_bulk = np.abs(Delta_old[Ny//2, - Nx//2])
+        else:
+            Delta_old_bulk = np.abs(Delta_old[Ny//2, - Nx//4])
     return Delta_new_i, gamma, D
 
 def calc_Tc(Nx, Ny, Deltag, param, skewed ):
@@ -120,8 +135,8 @@ def calc_Tc(Nx, Ny, Deltag, param, skewed ):
     # The first calculation is the same for all temperatures --------------
     Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)
 
-    H = make_H_numba_boundaryjumping(Nx, Ny, Delta_arr, param, bd, skewed = skewed)
-
+    H = make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed = skewed)
+    
     D, gamma = np.linalg.eigh(H)
     D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
     # --------------------------------------------------------------------
@@ -131,7 +146,7 @@ def calc_Tc(Nx, Ny, Deltag, param, skewed ):
 
         Ts[i] = T
         # print("NOW: ", type(Delta_arr1))
-        if not does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1,  skewed=skewed):
+        if not does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd, skewed=skewed):
             Tc = T
             return Tc, Ts #, Deltas, Delta_i, gamma, D
         # cProfile.run("Delta_i, gamma, D = calc_Delta_sc(Nx, Ny, Delta0, 0.001, 0.0001, param, skewed=skewed)")
@@ -159,13 +174,13 @@ def calc_Tc(Nx, Ny, Deltag, param, skewed ):
     # print(" Too low range, no cutoff found")
 
 def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed ):
-    N = 12 # Look at, maybe not needed this accuracy
+    N = 10 # Look at, maybe not needed this accuracy
     t, U, mu, mg, mz = param
 
     # The first calculation is the same for all temperatures --------------
     Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)
     Delta_arr[:, :bd] = 0
-    H = make_H_numba_boundaryjumping(Nx, Ny, Delta_arr, param, bd, skewed = skewed)
+    H = make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed = skewed)
 
     D, gamma = np.linalg.eigh(H)
     D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
@@ -178,7 +193,7 @@ def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed ):
         T = (Ts_upper + Ts_lower ) / 2
         Delta_arr1 = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
 
-        if does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1,  skewed=skewed):
+        if does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  skewed=skewed):
             Ts_lower = T
         else:
             Ts_upper = T #, Deltas, Delta_i, gamma, D
@@ -230,7 +245,6 @@ plt.show()"""
 #     print(f"Checking for T = {T}")
 #     Delta_arr1, gamma, D = calc_Delta_sc(Nx, Ny, Deltag, 0.001, T, param, skewed = False)
 #     # Delta_arr1 = Delta_sc(gamma, D, U, T, Nx, Ny)
-#     # assert np.allclose(Delta_arr1[:, :Nx//2], 0)
 #     # Delta_arr1[:, :Nx//2]= 0
 #     Deltas[i] = np.reshape(Delta_arr1, (Ny, Nx))[Ny//2, -Nx//4]
 
@@ -270,20 +284,42 @@ def Ldos(gamma, D):
 
     return s
 
-Nx = 35
-Ny = 30
+
+Nx = 100
+Ny = 3
 skewed = False
 t = 1.0 # Assume nn hopping term to be isotropic and constant for all lattice points. Set all quantities from this
-U = 1.8 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
+U = 2.0 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
 Deltag =  1e-5 #  First guess: constant, small Delta inside the SC, will be updated self-consistently
-mu =   -0.5*t # So far, constant chemical potential
+mu =    -0.5*t # So far, constant chemical potential
 # mz = 0. # Ferromagetism in the AM
 # mg = 0
+mg = 0.0
+bd = Nx // 7*0
+mz = 0
+# Calculate the kf
+Delta_arrF = np.zeros((Nx*Ny), dtype = complex).reshape(Ny, Nx)
+
+paramF = (t, 0, mu, mg, mz)
+H = make_H_numba(Nx, Ny, Delta_arrF, paramF, bd, skewed = skewed)
+
+D, gamma = np.linalg.eigh(H)
+D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
+# plt.plot(D)
+# plt.show()
+idx = (np.abs(D - mu)).argmin()
+vF = np.gradient(D)[idx]
+# vF = 2 * t * np.sin()
+vF3 = np.arccos( - mu / 4 / t)
+# print(vF3)
+# print(vF)
+# ----------------------------------------------------
+
 num_sweep_vals = 1
 tic = time.time()
 # mg = 0
 mz = 0
-bd = Nx//7
+# print(bd)
 mgs = np.linspace(0., 1.5, num_sweep_vals)
 # mzs = np.linspace(0, 0.5, num_sweep_vals)
 Tcs = np.zeros(num_sweep_vals)
@@ -293,38 +329,62 @@ tic = time.time()
 fnum = 0
 fig, ax = plt.subplots(nrows = 1, ncols= 1)
 
-for i, mg in enumerate(mgs):
-    print("Running for mg = ", mg)
+param = (t, U, mu, mg, mz)
+Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed = skewed)
+print(Tc)
+T_plots = np.array([1e-5, 0.85 * Tc , 0.95 * Tc, 0.97*Tc, 0.99 * Tc, 1.0 * Tc])
+Delta_is = np.zeros((6, Ny, Nx), dtype=complex)
+# T_plot = 0.21
+for i, T in enumerate(T_plots):
+    print("Running for T/Tc = ", T / Tc)
     param = (t, U, mu, mg, mz)
-    if i == 0: #or i == num_sweep_vals -1 or i == num_sweep_vals//2:
+    # if i == 0: #or i == num_sweep_vals -1 or i == num_sweep_vals//2:
         # Basically zero termperature, and low tolerance
-        Delta_i, gamma, D = calc_Delta_sc(Nx, Ny, Deltag, 0.000001, 0.01, param, bd,  skewed=skewed) #tol, T
-        Delta_i = Delta_i.reshape((Ny, Nx))
-        print(np.amax(np.abs(Delta_i)))
-        im = ax.imshow(np.abs(Delta_i), aspect="auto")
-        ax.set_title((f"mg = {mg:.1f}"))
-        fig.colorbar(im, ax=ax)
-        fnum += 1
+    Delta_i, gamma, D = calc_Delta_sc(Nx, Ny, Deltag, 1e-9, T_plots[i], param, bd,  skewed=skewed) #tol, T
+    Delta_i = Delta_i.reshape((Ny, Nx))
+    Delta_is[i] = Delta_i
+    print(np.amax(np.abs(Delta_i)))
+    im = ax.imshow(np.abs(Delta_i), aspect="auto")
+    # ax.set_title((f"mg = {mg:.1f}"))
+    # fig.colorbar(im, ax=ax)
+    # fnum += 1
 
     # Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed = skewed)
     # Tcs[i] = Tc
-
+# Delta_is = np.array(Delta_is)
+print(Delta_is.shape)
 print(f"took {time.time()- tic} seconds")
 
-xi = np.sqrt(2 * np.abs(mu)) / np.pi /np.amax(np.abs(Delta_i))    # First factor is k_F
-print("Coherence length: ", xi)
+# xi = np.sqrt(2 * np.abs(mu)) / np.pi /np.amax(np.abs(Delta_i))    # First factor is k_F
+# xi2 = vF / np.pi /np.amax(np.abs(Delta_i))    # First factor is k_F
+# xi3 = vF3 / np.pi /np.amax(np.abs(Delta_i))    # First factor is k_F
+
+# print("Coherence length: ", xi)
+
+# print("Coherence length2: ", xi2)
+
+# print("Coherence length3: ", xi3)
+
+print(f"Tc = {Tc}")
 # fig.colorbar(im, ax=ax.ravel().tolist())
 fig.suptitle(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mz ={mz:.1f}")
 plt.show()
 
+for i in range(6):
+    plt.plot(np.arange(Nx), np.abs(Delta_is[i][Ny//2, :]), label = f"T/Tc = {T_plots[i]/Tc:.2f}")
+
+plt.legend()
+plt.ylabel("abs(Delta)")
+plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny},,\n Tc = {Tc:.2f}")
+plt.show()
 plt.plot(D)
 plt.show()
 
-plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mg={mg:.1f}")
-plt.xlabel("m/t")
-plt.ylabel("Tc")
-plt.plot(mgs, Tcs)
-plt.show()
+# plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mg={mg:.1f}")
+# plt.xlabel("m/t")
+# plt.ylabel("Tc")
+# plt.plot(mgs, Tcs)
+# plt.show()
 
 
 # Nx = 20
@@ -345,7 +405,6 @@ plt.show()
 
 # ldos = Ldos(gamma, D)
 # E = np.linspace(-4, 4, 5000)
-# print(ldos.shape)
 # ldos = ldos.reshape(Ny, Nx, 5000)
 # plt.plot(E, ldos[Ny//2,- Nx //2,  :])
 # plt.show()
@@ -400,9 +459,7 @@ plt.show()"""
 # print(f"Took {time.time()- tic} seconds to solve eigenvalue problem using dense")
 # # Sparse way ------------------------------------------------------------
 # # tic = time.time() 
-# # print("desne?,", np.allclose(H, Hs.todense()))
 # # num_ev = Nx*Ny
-# # print(np.allclose(H, np.conjugate(H.T)))
 # # sD, sgamma = eigsh(H, k = num_ev, which = "LR")
 # # sD_low, sgamma = eigsh(H, k = num_ev, which = "SR")
 # # print(f"Took {time.time()- tic} seconds to solve eigenvalue problem for sparse matrix")

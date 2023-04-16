@@ -37,7 +37,7 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed):
             for iy in range(0, Ny):
                 i = ix + Nx *iy 
                 # Diagonal components in lattice space
-                if ix < bd: # AM left part, SC right part
+                if ix <= bd: # AM left part, SC right part
                     m = mg
                     mz = mzg
                 elif bd ==0: # When we set bd = 0, assume we want ferromagnetism/ altermagnetism in the SC. Else we can set mg = 0 etc
@@ -46,6 +46,20 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed):
                 else:
                     m = 0
                     mz = 0
+
+                if ix == bd:
+                    zetaL = 0.
+                elif ix < bd:
+                    zetaL = 1.
+                else: 
+                    zetaL = -1.
+
+                if ix == bd -1:
+                    zetaR = 0.
+                elif ix < bd - 1:
+                    zetaR = 1.
+                else: 
+                    zetaR = -1.
 
                 H[i,i] = nb_block(((mu*I2  + mz *sigmaz, Delta_arr[iy, ix] * (-1j * sigmay) )  ,
                                     (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz *sigmaz ) ) ) # With ferromagnetism
@@ -58,31 +72,35 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed):
     # x-hopping, m = mg --------------------------------------------------------------------
                     # Contribution from the right, only if not at the right edge, and special case at boundary
                     if ix < Nx - 1:
-                        if ix == bd -1:
-                            H[i, i + 1] = nb_block(((t * I2,  0 * I2),
-                                                    (0 * I2, -t * I2)))
-                        else:                    
-                            H[i, i + 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                    (0 * I2            , -t * I2 - m*sigmaz)))
+                        # if ix == bd -1:
+                        #     H[i, i + 1] = nb_block(((t * I2,  0 * I2),
+                        #                             (0 * I2, -t * I2)))
+                        # else:                    
+                        H[i, i + 1] = nb_block(((t * I2 + 0.5*(1 + zetaR)*m*sigmaz , 0 * I2),
+                                                (0 * I2                           , -t * I2 - 0.5*(1 + zetaR)*m*sigmaz)))
                         
                     # Contrbution from the left, only if not on the left edge
                     if ix > 0:
-                        H[i, i - 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                (0 * I2, -t * I2 - m*sigmaz)))
+                        H[i, i - 1] = nb_block(((t * I2 + 0.5*(1 + zetaL)*m*sigmaz , 0 * I2),
+                                                (0 * I2, -t * I2 - 0.5*(1 + zetaL)*m*sigmaz)))
                     # y hopping
-                    m = -m  # Assume oposite here, this is the altermagnetism part
+                    if ix <  bd:
 
+                        m = -m  # Assume oposite here, this is the altermagnetism part
+                    else: 
+                        m = 0
                     # If below
                     # IF not periodic, include the if tests below
-                    if  iy < Ny - 1 :
-                    #     # From down
+                    # if  iy < Ny - 1 :
+                    # From down
+                    if not Ny ==1:
                         H[i, (i + Nx) % (Nx*Ny)] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                             (0 * I2, -t * I2 - m*sigmaz)))
+                                                                (0 * I2, -t * I2 - m*sigmaz)))
 
-                    if iy  > 0: # Except iy = 0
-                        # From up
+                        # if iy  > 0: # Except iy = 0
+                            # From up
                         H[i, i - Nx] = nb_block(((t * I2 + m*sigmaz , 0 * I2            ),
-                                                 (0 * I2            , -t * I2 - m*sigmaz)))
+                                                    (0 * I2            , -t * I2 - m*sigmaz)))
 # Skewed ---------------------------------------------------------------------------
                 elif skewed: 
                     # print("THIS IS NOT VERIFIED!")
