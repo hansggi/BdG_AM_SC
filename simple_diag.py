@@ -1,13 +1,13 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import time
-import cProfile
+# import cProfile
 from numba import njit
 from scipy import sparse
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.linalg import eigs
 
-from funcs import make_sigmas, nb_block, nb_block2, make_H_numba, f, Delta_sc, unpack_block_matrix, make_H_numba_boundaryjumping
+from funcs import make_sigmas, nb_block, nb_block2, make_H_numba, f, Delta_sc, unpack_block_matrix
 
 from multiprocessing import Pool
 # print("Number of cpuf : ", multiprocessing.cpu_count())
@@ -34,15 +34,13 @@ def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  skewed = Fals
             H = make_H_numba(Nx, Ny, Delta_arr, param, bd,  skewed = skewed)
             # print(np.allclose(H, np.conjugate(H).T))
             D, gamma = np.linalg.eigh(H)
-
             D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
 
             Delta_arr = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
 
-        if bd ==0:
-            Delta_bulk = np.abs(Delta_arr)[Ny//2, - Nx // 2]
-        else: 
-            Delta_bulk = np.abs(Delta_arr)[Ny//2, - Nx // 4]
+        
+        Delta_bulk = np.abs(Delta_arr[Ny//2, (bd + Nx)//2])
+
         it += 1
         
         if it > num_it and Delta_bulk > Deltag :
@@ -103,10 +101,8 @@ def calc_Delta_sc(Nx, Ny, Deltag, tol, T, param, bd,  skewed):
 
         Delta_new_i = Delta_sc(gamma, D, U, T, Nx, Ny, bd)
         Delta_new = Delta_new_i.reshape(Ny, Nx)
-        if bd == 0:
-            Delta_bulk = np.abs(Delta_new)[Ny//2, - Nx//2]
-        else:
-            Delta_bulk = np.abs(Delta_new)[Ny//2, - Nx//4]
+
+        Delta_bulk = np.abs(Delta_new)[Ny//2, (bd + Nx)//2]
         it += 1
         # Bulk method
         if np.abs(np.abs(Delta_bulk) - np.abs(Delta_old_bulk))  <= tol :
@@ -117,10 +113,9 @@ def calc_Delta_sc(Nx, Ny, Deltag, tol, T, param, bd,  skewed):
         #     done = True
         Delta_old = Delta_new
         Delta_old_arr = Delta_new
-        if bd == 0:
-            Delta_old_bulk = np.abs(Delta_old[Ny//2, - Nx//2])
-        else:
-            Delta_old_bulk = np.abs(Delta_old[Ny//2, - Nx//4])
+        
+        Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd + Nx)//2])
+    # print("Used ", it, " iterations to calculate Delta self-consist.")
     return Delta_new_i, gamma, D
 
 def calc_Tc(Nx, Ny, Deltag, param, skewed ):
@@ -174,7 +169,7 @@ def calc_Tc(Nx, Ny, Deltag, param, skewed ):
     # print(" Too low range, no cutoff found")
 
 def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed ):
-    N = 10 # Look at, maybe not needed this accuracy
+    N = 11 # Look at, maybe not needed this accuracy
     t, U, mu, mg, mz = param
 
     # The first calculation is the same for all temperatures --------------
@@ -285,11 +280,11 @@ def Ldos(gamma, D):
     return s
 
 
-Nx = 100
-Ny = 3
+"""Nx = 100
+Ny = 1
 skewed = False
 t = 1.0 # Assume nn hopping term to be isotropic and constant for all lattice points. Set all quantities from this
-U = 2.0 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
+U = 1.5 * t # Strength of attractive potential, causing s.c. Assumed to be constant here
 Deltag =  1e-5 #  First guess: constant, small Delta inside the SC, will be updated self-consistently
 mu =    -0.5*t # So far, constant chemical potential
 # mz = 0. # Ferromagetism in the AM
@@ -297,20 +292,102 @@ mu =    -0.5*t # So far, constant chemical potential
 mg = 0.0
 bd = Nx // 7*0
 mz = 0
+param = (t, U, mu, mg, mz )"""
+# def mg_sweep_Delta(Nx, Ny, mg_start, mg_end, num_sweep_vals, U, mu, Deltag, bd, skewed ):
+
+def sweep_Delta(Nx, Ny, mg, U, mu, Deltag, bd, tol, skewed ):
+    mz = 0
+    t = 1.
+    Tc0 = 0.3
+    # Calc Tc in the mg = 0 case
+    param0 = (t, U, mu, 0, 0)
+    Tc = calc_Tc_binomial(Nx, Ny, Deltag, param0, Tc0, bd, skewed = skewed) 
+    print(Tc)
+    # -----------------------------------------------------------
+    # Tc in this case
+    param = (t, U, mu, mg, mz)
+    Tc2 = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, skewed = skewed) 
+    print(f"Tc :{Tc:.4f}, \nTc2:{Tc2:.4f}.")
+    T_plots = np.array([1e-8, 0.5 * Tc , 0.95 * Tc, 0.98*Tc, 1.0*Tc])
+    fig, ax = plt.subplots()
+    for i, T in enumerate(T_plots):
+        Delta_i, gamma, D = calc_Delta_sc(Nx, Ny, Deltag, tol, T_plots[i], param, bd,  skewed=skewed) 
+        Delta_i = Delta_i.reshape((Ny, Nx))
+        ax.plot(np.abs(Delta_i[Ny//2, :]), label = f"T/Tc = {T/Tc:.2f}")
+
+    fig.suptitle(f" mg ={mg:.1f}, U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}")
+    fig.legend()
+    plt.savefig(f"1d_Delta/N=({Nx},{Ny}),mg={mg:.1f}.pdf", bbox_inches='tight')
+
+    # plt.savefig(f"1d_Delta/N=({Nx},{Ny}),mg={mg:.1f}.pdf", bbox_inches='tight')
+    # plt.show()
+
+tic = time.time()
+sweep_Delta(Nx = 20, Ny = 20, mg = 0. , U = 1.7, mu = -0.5, Deltag = 1e-5, bd = 20, tol = 1e-9, skewed=False)
+# # sweep_Delta(Nx = 50, Ny = 1, mg = 0.5, U = 1.7, mu = -0.5, Deltag = 1e-5, bd = 10, tol = 1e-9, skewed=False)
+# # sweep_Delta(Nx = 50, Ny = 1, mg = 1.0, U = 1.7, mu = -0.5, Deltag = 1e-5, bd = 10, tol = 1e-9, skewed=False)
+# # sweep_Delta(Nx = 50, Ny = 1, mg = 2.0, U = 1.7, mu = -0.5, Deltag = 1e-5, bd = 10, tol = 1e-9, skewed=False)
+# # sweep_Delta(Nx = 50, Ny = 1, mg = 4.0, U = 1.7, mu = -0.5, Deltag = 1e-5, bd = 10, tol = 1e-9, skewed=False)
+# sweep_Delta(Nx = 40, Ny = 1, mg = 8.0, U = 1.7, mu = -0.5, Deltag = 1e-5, bd = 10, tol = 1e-9, skewed=False)
+print(f"took {time.time()- tic} seconds")
+
+# plt.show()
+
+def mg_sweep_Tc(Nx, Ny, mg_start, mg_end, num_sweep_vals,  U, mu, Deltag, bd, skewed ):
+    mz = 0
+    t = 1.
+    Tc0 = 0.3
+    # Calc Tc in the mg = 0 case
+    param0 = (t, U, mu, 0, 0)
+    Tc = calc_Tc_binomial(Nx, Ny, Deltag, param0, Tc0, bd, skewed = skewed) 
+    print(Tc)
+    # -----------------------------------------------------------
+    # Tc in this case
+    # param = (t, U, mu, mg, mz)
+    # Tc2 = calc_Tc_binomial(Nx, Ny, Deltag, param0, Tc0, bd, skewed = skewed) 
+    # print(f"Tc :{Tc:.4f}, \nTc2:{Tc2:.4f}.")
+    T_plots = np.array([1e-8, 0.5 * Tc , 0.95 * Tc, 0.98*Tc, 1.0*Tc])
+    mgs = np.linspace(mg_start, mg_end, num_sweep_vals)
+    Tcs = np.zeros_like(mgs)
+    fig, ax = plt.subplots()
+    for i, mg in enumerate(mgs):
+        print(f"running for mg = {mg}")
+        param = (t, U, mu, mg, mz)
+        # Delta_i, gamma, D = calc_Delta_sc(Nx, Ny, Deltag, tol, T_plots[i], param, bd,  skewed=skewed) 
+        # Delta_i = Delta_i.reshape((Ny, Nx))
+        Tc2 = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, skewed=skewed)
+        print(f"Tc :{Tc:.4f}, \nTc2:{Tc2:.4f}.")
+        Tcs[i] = Tc2
+        # ax.plot(np.abs(Delta_i[Ny//2, :]), label = f"T/Tc = {T/Tc:.2f}")
+
+    ax.plot(mgs, Tcs)
+    fig.suptitle(f" mg ={mg:.1f}, U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}")
+    # fig.legend()
+    ax.set_xlabel("m")
+    ax.set_ylabel("Tc")
+
+    plt.savefig(f"mg_sweep/N=({Nx},{Ny}).pdf", bbox_inches='tight')
+    # plt.show()
+
+tic = time.time()
+mg_sweep_Tc(Nx= 20, Ny= 20, mg_start=0, mg_end= 5, num_sweep_vals= 5,  U = 1.7, mu= -0.5, Deltag= 1e-5, bd = 10, skewed= False)
+print(f"took {time.time()- tic} seconds")
+
+plt.show()
 # Calculate the kf
-Delta_arrF = np.zeros((Nx*Ny), dtype = complex).reshape(Ny, Nx)
+# Delta_arrF = np.zeros((Nx*Ny), dtype = complex).reshape(Ny, Nx)
 
-paramF = (t, 0, mu, mg, mz)
-H = make_H_numba(Nx, Ny, Delta_arrF, paramF, bd, skewed = skewed)
+# paramF = (t, 0, mu, mg, mz)
+# H = make_H_numba(Nx, Ny, Delta_arrF, paramF, bd, skewed = skewed)
 
-D, gamma = np.linalg.eigh(H)
-D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
+# D, gamma = np.linalg.eigh(H)
+# D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
 # plt.plot(D)
 # plt.show()
-idx = (np.abs(D - mu)).argmin()
-vF = np.gradient(D)[idx]
+# idx = (np.abs(D - mu)).argmin()
+# vF = np.gradient(D)[idx]
 # vF = 2 * t * np.sin()
-vF3 = np.arccos( - mu / 4 / t)
+# vF3 = np.arccos( - mu / 4 / t)
 # print(vF3)
 # print(vF)
 # ----------------------------------------------------
@@ -323,7 +400,6 @@ mz = 0
 mgs = np.linspace(0., 1.5, num_sweep_vals)
 # mzs = np.linspace(0, 0.5, num_sweep_vals)
 Tcs = np.zeros(num_sweep_vals)
-Tc0 = 0.3
 
 tic = time.time()
 fnum = 0
@@ -332,8 +408,10 @@ fig, ax = plt.subplots(nrows = 1, ncols= 1)
 param = (t, U, mu, mg, mz)
 Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd,  skewed = skewed)
 print(Tc)
-T_plots = np.array([1e-5, 0.85 * Tc , 0.95 * Tc, 0.97*Tc, 0.99 * Tc, 1.0 * Tc])
-Delta_is = np.zeros((6, Ny, Nx), dtype=complex)
+# Tc = 0.20068359375
+print(Tc)
+T_plots = np.array([1e-5, 0.85 * Tc , 0.95 * Tc, 0.97*Tc,   Tc, 1.01 * Tc, 1.02*Tc])
+Delta_is = np.zeros((7, Ny, Nx), dtype=complex)
 # T_plot = 0.21
 for i, T in enumerate(T_plots):
     print("Running for T/Tc = ", T / Tc)
@@ -370,12 +448,12 @@ print(f"Tc = {Tc}")
 fig.suptitle(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mz ={mz:.1f}")
 plt.show()
 
-for i in range(6):
+for i in range(len(T_plots)):
     plt.plot(np.arange(Nx), np.abs(Delta_is[i][Ny//2, :]), label = f"T/Tc = {T_plots[i]/Tc:.2f}")
 
 plt.legend()
 plt.ylabel("abs(Delta)")
-plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny},,\n Tc = {Tc:.2f}")
+plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny},\n k_B Tc = {Tc:.2f}")
 plt.show()
 plt.plot(D)
 plt.show()

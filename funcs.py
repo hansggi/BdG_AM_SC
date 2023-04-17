@@ -76,7 +76,7 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed):
                         #     H[i, i + 1] = nb_block(((t * I2,  0 * I2),
                         #                             (0 * I2, -t * I2)))
                         # else:                    
-                        H[i, i + 1] = nb_block(((t * I2 + 0.5*(1 + zetaR)*m*sigmaz , 0 * I2),
+                        H[i, (i + 1)%(Nx*Ny)] = nb_block(((t * I2 + 0.5*(1 + zetaR)*m*sigmaz , 0 * I2),
                                                 (0 * I2                           , -t * I2 - 0.5*(1 + zetaR)*m*sigmaz)))
                         
                     # Contrbution from the left, only if not on the left edge
@@ -174,7 +174,7 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed):
     return unpack_block_matrix(H, Nx, Ny)
 
 
-@njit()
+"""@njit()
 def make_H_numba_boundaryjumping(Nx, Ny, Delta_arr, param, bd, skewed):
     t, U, mu, mg, mzg = param
     H = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
@@ -301,7 +301,7 @@ def make_H_numba_boundaryjumping(Nx, Ny, Delta_arr, param, bd, skewed):
     # print(np.allclose(Hr, np.conjugate(Hr).T))
     return unpack_block_matrix(H, Nx, Ny)
 
-
+"""
 def f(E, T):
     # Assume equilibrium
     return (1 - np.tanh( E / ( 2 * T ))) / 2
