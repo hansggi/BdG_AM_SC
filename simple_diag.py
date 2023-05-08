@@ -12,6 +12,8 @@ from funcs import make_sigmas, nb_block, nb_block2, make_H_numba, fd, Delta_sc, 
 from multiprocessing import Pool
 
 import sys
+
+from concurrent.futures import ProcessPoolExecutor
 # @njit(cache = True)
 def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
@@ -450,14 +452,13 @@ def main(mg):
     # Method: decide on system parameters, make sure Ny is large enough to avoid-finite size effects (by running Ny_sweep), then decide on number of iterations that give a the correct Tc
     # (by running numit_sweep). Expect it to go down as Ny increases.
 
-    tic = time.time()
     t = 1.
     Nx = 20
-    Ny = 10
+    Ny = 2
     Tc0 = 0.3
 
     # Nys = np.arange(2, 12, 2)
-    NDelta = 200
+    NDelta = 5
     # mg = 0.0
     mz = 0.
     bd = np.array([Nx//2, Nx])
@@ -492,7 +493,7 @@ def main(mg):
     #-----------------------------------------
 
     # Mg: 
-    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag,   bd, num_it=NDelta, skewed = True)
+    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag,   bd, num_it=NDelta, skewed = False)
     print(Tc)
     # Tc_fo_mg(Nx, Ny, mgs, U, mu, Deltag,   bd, num_it=NDelta, skewed = True)
     # Tc_fo_mg(Nx, Ny, mgs, U, mu, Deltag,   bd, num_it=NDelta, skewed = False)
@@ -501,7 +502,6 @@ def main(mg):
 
     # Tcs = Ny_sweep_Tc(Nx = Nx, Nys = Nys, mg=mg, mz=mz, U=1.7, mu=-0.5, Deltag = 1e-5, DeltaT= np.array([0.5e-5, 2.e-5]), bd = 10, tol = 5e-8, num_it = numit,  skewed = False)
     # print(Tcs)
-    print("time: ", time.time() - tic)
 
     # plot_Ny(Nys, Tcs, Nx, numit, mg, mz)
 
@@ -531,13 +531,32 @@ def main(mg):
     # plt.show()
     # sweep_Delta_mg(Nx = 30, Ny = 1, mgs = np.linspace(0, 1.5, 10), T = 0.133, U = 1.7, mu = -0.5, Deltag = 1e-5, DeltaT= [0.5e-5, 2.e-5], bd = 10, tol = 1e-8, num_it = num_iter, skewed= False )
     # mg_sweep_Tc(Nx= 20, Ny= 5, mg_start=0, mg_end= 1.5, num_sweep_vals= 20,  U = 1.7, mu= -0.5, Deltag= 1e-5 ,DeltaT= [0.5e-5, 2.e-5], bd = 10, num_it = num_iter, skewed= False)
-    plt.show()
+    # plt.show()
     #------------------------------------------------------------------------
+    return Tc
 
-# mg = float(sys.argv[1])
-# print("arg was: ", mg)
-main(0.0)
 
+if __name__ == "__main__":
+    tic = time.time()
+
+    mgs = np.linspace(0, 1.0, 10)
+    Tcs = np.zeros(len(mgs))
+    with ProcessPoolExecutor(max_workers=40) as executor:
+        for i, result in enumerate(executor.map(main, mgs)):
+            Tcs[i] = result
+            # print(future.result())
+
+
+
+    # Tcs = np.array(future)
+    np.save("Tcs", Tcs)
+    print("time: ", time.time() - tic)
+
+    # print(Tcs)
+    plt.plot(mgs, Tcs)
+    plt.show()
+# main(0.0)
+# main(1.0)
 
 # # Paralellization --------------------------------------
 # """def mpwrap(mg):
@@ -545,26 +564,27 @@ main(0.0)
 #     Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, skewed = skewed)
 #     return Tc"""
 
-# '''if __name__ == "__main__":
+'''if __name__ == "__main__":
     
-#     p = Pool(1)
-#     Tcs = p.map(mpwrap, mgs)
+    p = Pool(1)
+    Tcs = p.map(mpwrap, mgs)
 
-#     print(f"took {time.time()- tic} seconds")
-#     plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mz={mz}")
+    print(f"took {time.time()- tic} seconds")
+    plt.title(f"U = {U}, mu = {mu}, N = {Nx, Ny}, sw = {skewed}, mz={mz}")
 #     plt.xlabel("m/t")
 #     plt.ylabel("Tc")
 #     plt.plot(mgs, Tcs)
 #     plt.show()
-# '''
-# # if __name__ == "__main__":
-# #     procs = []
-# #     for mg in mgs:
-# #         proc = Process(target=mpwrap, args=(mg,))
-# #         procs.append(proc)
-# #         proc.start()
-# #     # complete the processes
-# #     for proc in procs:
-# #         proc.join()
+'''
+
+# if __name__ == "__main__":
+#     procs = []
+#     for mg in mgs:
+#         proc = Process(target=mpwrap, args=(mg,))
+#         procs.append(proc)
+#         proc.start()
+#     # complete the processes
+#     for proc in procs:
+#         proc.join()
 
 # # ----------------------------------------------------------------------
