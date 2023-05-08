@@ -453,7 +453,7 @@ def main(mg):
     tic = time.time()
     t = 1.
     Nx = 20
-    Ny = 2
+    Ny = 10
     Tc0 = 0.3
 
     # Nys = np.arange(2, 12, 2)
@@ -534,9 +534,9 @@ def main(mg):
     plt.show()
     #------------------------------------------------------------------------
 
-mg = float(sys.argv[1])
-print("arg was: ", mg)
-main(mg)
+# mg = float(sys.argv[1])
+# print("arg was: ", mg)
+main(0.0)
 
 
 # # Paralellization --------------------------------------
