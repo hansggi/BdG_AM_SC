@@ -596,7 +596,7 @@ def main(mg):
     #-----------------------------------------
 
     # Mg: 
-    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag,   bd, num_it=NDelta, skewed = False)
+    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag, bd, num_it=NDelta, skewed = True)
     # ic(Tc)
     # numitSweep(Nx= Nx, Ny=Ny, mg=mg, mz=mz, U=U, mu= mu, Deltag = Deltag, bd = bd, num_its = np.linspace(10, 500 , 10).astype(int), skewed = False)
     # plt.show()
@@ -662,7 +662,7 @@ if __name__ == "__main__":
             Tcs[i] = result
 
     print(Tcs)
-    np.save("Tcs", Tcs)
+    np.save("TcsSkewed2", Tcs)
     print("Time: ", time.time() - tic)
 
     # # print(Tcs)
