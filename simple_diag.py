@@ -561,7 +561,7 @@ def main(mg):
     Tc0 = 0.3
 
     # Nys = np.arange(2, 12, 2)
-    NDelta = 5
+    NDelta = 20
     # mg = 0.0
     mz = 0.
     bd = np.array([Nx//2, Nx])
@@ -655,7 +655,7 @@ def main(mg):
 if __name__ == "__main__":
     tic = time.time()
 
-    mgs = np.linspace(0, 0.3, 5)
+    mgs = np.linspace(0, 0.3, 20)
     Tcs = np.zeros(len(mgs))
     with ProcessPoolExecutor(max_workers=40) as executor:
         for i, result in enumerate(executor.map(main, mgs)):
