@@ -392,7 +392,7 @@ def Delta_sc(gamma, D, U, T, Nx, Ny, bd):
     f  = (1 - np.tanh(  D / ( 2 * T ))) / 2
     # fm = (1 - np.tanh( -D / ( 2 * T ))) / 2
     # -------------------------------------------------------------------
-    Delta_i = Ui*np.sum(u_dn *np.conjugate(v_up) * f +       u_up * np.conjugate(v_dn)* (1 - f) , axis = 1) # Here, we used equilibrium explicitly to say (1-f(E)) = f(-E) 
+    Delta_i = -Ui*np.sum(u_dn *np.conjugate(v_up) * f +       u_up * np.conjugate(v_dn)* (1 - f) , axis = 1) # Here, we used equilibrium explicitly to say (1-f(E)) = f(-E) 
     return Delta_i
 
 
