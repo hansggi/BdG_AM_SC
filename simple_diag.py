@@ -62,7 +62,7 @@ def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  NDelta, skewe
 def does_Delta_increase_steff(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
     t, U, mu, mg, mz = param
-    StefNum = 6
+    StefNum = 600
     Delta_tab = np.zeros((NDelta, Ny, Nx), dtype="complex128")
     Delta_tab[0, :, :] = Delta_arr1.copy()
     ind = np.nonzero(Delta_tab[0])
@@ -562,6 +562,7 @@ def main(mg):
 
     # Nys = np.arange(2, 12, 2)
     NDelta = 20
+    ic(NDelta)
     # mg = 0.0
     mz = 0.
     bd = np.array([Nx//2, Nx])
@@ -596,7 +597,7 @@ def main(mg):
     #-----------------------------------------
 
     # Mg: 
-    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag, bd, num_it=NDelta, skewed = True)
+    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag, bd, num_it=NDelta, skewed = False)
     # ic(Tc)
     # numitSweep(Nx= Nx, Ny=Ny, mg=mg, mz=mz, U=U, mu= mu, Deltag = Deltag, bd = bd, num_its = np.linspace(10, 500 , 10).astype(int), skewed = False)
     # plt.show()
@@ -655,14 +656,14 @@ def main(mg):
 if __name__ == "__main__":
     tic = time.time()
 
-    mgs = np.linspace(0, 0.3, 20)
+    mgs = np.linspace(0, 5.0, 20)
     Tcs = np.zeros(len(mgs))
-    with ProcessPoolExecutor(max_workers=40) as executor:
+    with ProcessPoolExecutor(max_workers=20) as executor:
         for i, result in enumerate(executor.map(main, mgs)):
             Tcs[i] = result
 
     print(Tcs)
-    np.save("TcsSkewed2", Tcs)
+    np.save(f"TcsReentranceMgs=({mgs[0]}, {mgs[-1]})ND=20", Tcs)
     print("Time: ", time.time() - tic)
 
     # # print(Tcs)
