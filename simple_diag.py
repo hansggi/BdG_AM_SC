@@ -14,33 +14,24 @@ from multiprocessing import Pool
 import sys
 from icecream import ic
 from concurrent.futures import ProcessPoolExecutor
-# @njit(cache = True)
-def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
+# @njit()
+def does_Delta_increase(Nx, Ny,m_arr, mz_arr,  Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
     t, U, mu, mg, mz = param
 
-    # x = np.arange(0, Nx)
-    # Delta_arr1 = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx) #*(x - bd)*0.05 / 40
-    # Delta_arr1[:, :bd] = 0
-    # plt.plot(x, Delta_arr[Ny//2, :])
-    # plt.show()
-
+    Delta = Delta_arr1.copy()
     for i in range(NDelta):
-        if i == 0 :
-            Delta_arr = Delta_arr1
-
-        else:
-            H = make_H_numba(Nx, Ny, Delta_arr, param, bd,  skewed = skewed)
+            H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta, param, bd,  skewed = skewed)
 
             D, gamma = np.linalg.eigh(H)
             D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
-            Delta_arr = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
+            Delta = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
 
-        if bd[1] < Nx:
-            Delta_bulk = np.abs(Delta_arr[Ny//2, (bd[0] + bd[1])//2])
+    if bd[1] < Nx:
+        Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + bd[1])//2])
 
-        else:
-            Delta_bulk = np.abs(Delta_arr[Ny//2, (bd[0] + Nx)//2])
+    else:
+        Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + Nx)//2])
 
         
         # if Delta_bulk > DeltaT[1] :
@@ -59,109 +50,52 @@ def does_Delta_increase(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  NDelta, skewe
         return True
 
 # @njit(cache = True)
-def does_Delta_increase_steff(Nx, Ny, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
+"""def does_Delta_increase_steff(Nx, Ny,m_arr, mz_arr, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
     t, U, mu, mg, mz = param
-    StefNum = 600
-    Delta_tab = np.zeros((NDelta, Ny, Nx), dtype="complex128")
-    Delta_tab[0, :, :] = Delta_arr1.copy()
-    ind = np.nonzero(Delta_tab[0])
+    StefNum = 8000
+    # Delta_tab = np.zeros((NDelta, Ny, Nx), dtype="complex128")
+    # Delta_tab[0, :, :] = Delta_arr1.copy()
 
 
     Deltapp = np.zeros_like(Delta_arr1)
     Deltap  = np.zeros_like(Delta_arr1)
-    Delta   = np.zeros_like(Delta_arr1)
+    Delta   = Delta_arr1.copy()
+    ind = np.nonzero(Delta)
 
+    ic(T)
     for i in range(1, NDelta):
-        H = make_H_numba(Nx, Ny, Delta_tab[i-1], param, bd,  skewed = skewed)
+        H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta, param, bd, skewed = skewed)
         D, gamma = np.linalg.eigh(H)
         D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
         # print(i, np.allclose(Delta_tab[i], 0))
-        # time.sleep(1)
         Deltapp = Deltap.copy()
         Deltap = Delta.copy()
         Delta = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
-        # if np.amax(np.abs(np.abs(Deltap) - np.abs(Delta))) < 1e-80:
-            # ic(np.amax( np.abs(Delta)))
-            # print(f"DoesDeltaInc terminated because Delta has converged after {i} iterations")
-            # if bd[1] < Nx:
-            #     Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + bd[1])//2])
+        # if np.amin(np.abs(Delta[ind] - Deltap[ind])) < 1e-18:
+        #     if np.amax(np.abs(Delta[ind] - Deltap[ind])) < 1e-12:
+        #        break
 
-            # else:
-            #     Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + Nx)//2])
-
-            # if Delta_bulk <= np.abs(Deltag):
-            #     # print("Ran through,", Delta_bulk)
-            #     return False
-            # else:
-            #     # print("Ran through", Delta_bulk)
-            #     return True
-        # DC = Delta.copy()
-        # ic(i)
-        # ic(Delta[ind])
-        # ic(Deltap[ind])
-        # ic(Deltapp[ind])
-        # time.sleep(5)
-        # if i ==9:
-        #     time.sleep(150)
-        if i%StefNum==0 and i > 1:
-            # print(i)
-            # time.sleep(1)
-            # Deltam1 = Delta_arr
-            # Deltam2 = Delta_tab[i-1]
-            # Deltam3 = Delta_tab[i-2]
-            # inds = np.where(np.abs(Delta_arr) -1e-8 < 0)[1]
-            # print(ind)
-            # print(ind)
-            # print(Delta_arr[ind])
-            # print(Delta)
-            # print(Delta[ind])
-            # time.sleep(10)
-            # ic(T)
-            # ic(Delta[ind])
-            # for i2 in range(len(ind[0])):
-            #     i = ind[0][i2]
-            #     j = ind[1][i2]
-            #     Delta[i, j] = np.abs((Deltapp[i, j] - (Deltap[i, j] - Deltapp[i, j])**2 / (Delta[i, j] - 2 * Deltap[i, j] + Deltapp[i, j])))
-            # time.sleep(20)
-
+        #     print("Oh Ow, ", np.amin(np.abs(Delta[ind] - Deltap[ind])))
+        #     print("Max error is ", np.amax(np.abs(Delta[ind] - Deltap[ind])))
+        #     time.sleep(5)
+        if i%StefNum==0 and i > 100:
+            print("error")
             Delta[ind] = Deltapp[ind] - (Deltap[ind] - Deltapp[ind])**2 / (Delta[ind] - 2 * Deltap[ind] + Deltapp[ind])
 
 
-        # ic(DC.shape)
-        # ic(DC[ind].shape)
-        # ic(ind)
-        Delta_tab[i][ind] = Delta[ind]
-        # else:
-        #     Delta_tab[i] = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
-
-        #     Delta_tab[i] = Delta_arr
-    # if Delta_bulk > DeltaT[1] :
-    #     # print("Term after", i)
-    #     return True
-    
-    # elif Delta_bulk <= DeltaT[0]:
-    #     # print("Term after", i)
-    #     return False
-    # print(Delta_tab.shape)
-    # Delta_arr2 = Delta_tab[-1, :, :]
-    # print(Delta_arr.shape)
-    # print(np.allclose(Delta_tab, 0))
-    # print("Did not converge after the set iteration nubmer")
     if bd[1] < Nx:
-        Delta_bulk = np.abs(Delta_tab[-1, Ny//2, (bd[0] + bd[1])//2])
+        Delta_bulk = np.abs(Delta[ Ny//2, (bd[0] + bd[1])//2])
 
     else:
-        Delta_bulk = np.abs(Delta_tab[-1, Ny//2, (bd[0] + Nx)//2])
+        Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + Nx)//2])
 
     if Delta_bulk <= np.abs(Deltag):
-        # print("Ran through,", Delta_bulk)
         return False
     else:
-        # print("Ran through", Delta_bulk)
         return True
 
-
+"""
 # @njit(cache = True)
 def calc_Delta_sc(Nx, Ny, Deltag, tol, T, param, bd,  skewed):
     t, U, mu, mg, mz = param
@@ -207,11 +141,12 @@ def calc_Delta_sc(Nx, Ny, Deltag, tol, T, param, bd,  skewed):
     # print("Used ", it, " iterations to calculate Delta self-consist.")
     return Delta_new, gamma, D
 
-# @njit(cache = True)
-def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_it, skewed ):
+# @njit()
+def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_it, skewed, alignment = None):
     N = 15 # Look at, maybe not needed this accuracy
     t, U, mu, mg, mz = param
-
+    if alignment == None:
+        assert bd[1] >= Nx
     # The first calculation is the same for all temperatures --------------
     # x = np.arange(0, Nx)
     # Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)#*(x - bd)**2*0.05 / 40**2
@@ -220,7 +155,21 @@ def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_it, skewed ):
     if bd[1] < Nx:
         Delta_arr[:, bd[1]:] = 0
 
-    H = make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed = skewed)
+    m_arr = (np.ones((Nx*Ny)) * mg).reshape(Ny, Nx)
+    m_arr[:, bd[0]:bd[1]] = 0
+
+    if alignment == "AP":
+        m_arr[:, bd[1]:] *= -1
+    # plt.imshow(m_arr)
+    # plt.show()
+
+    if mz != 0:
+
+        assert alignment == None
+
+    mz_arr = (np.ones((Ny*Nx))*mz).reshape(Ny, Nx)
+    mz_arr[:, bd[0]:] = 0
+    H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, param, bd, skewed)
     # plt.imshow(np.abs(H[::4, ::4]))
     # plt.colorbar()
     # plt.show()
@@ -238,7 +187,9 @@ def calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_it, skewed ):
         assert Ts_upper > Ts_lower
         Delta_arr1 = Delta_sc(gamma, D, U, T, Nx, Ny, bd).reshape(Ny, Nx)
 
-        if does_Delta_increase_steff(Nx, Ny, Deltag, T, param, Delta_arr1, bd, num_it, skewed=skewed): # Meaning that there is SC at this temp, need to go higher in T to find Tc
+
+
+        if does_Delta_increase(Nx, Ny,m_arr, mz_arr, Deltag, T, param, Delta_arr1, bd, num_it, skewed=skewed): # Meaning that there is SC at this temp, need to go higher in T to find Tc
             Ts_lower = T
         else:
             Ts_upper = T 
@@ -449,9 +400,9 @@ def Tc_fo_mg(Nx, Ny, mgs, U, mu, Deltag,   bd, num_it, skewed ):
     plt.savefig(f"mg_sweep/N=({Nx},{Ny})numit={num_it}sw={skewed}.pdf", bbox_inches='tight')
     # plt.show()
 
-def Tc_one(Nx, Ny, mg,mz,t,Tc0, U, mu, Deltag,   bd, num_it, skewed):
+def Tc_one(Nx, Ny, mg,mz,t,Tc0, U, mu, Deltag,   bd, num_it, skewed, alignment):
     param = (t, U, mu, mg, mz)
-    Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_it, skewed=skewed)
+    Tc = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_it, skewed, alignment)
 
     return Tc
 
@@ -529,7 +480,7 @@ def Tc_fo_Ny(Nx, Nys, mg, mz, U, mu, Deltag,   bd, tol, num_it, skewed = False):
     plt.savefig(f"Ny_sweep/PNx={Nx}_numit={num_it}m={mg}mz={mz}sw={skewed}.pdf", bbox_inches='tight')
     return Tcs
 
-def numitSweep(Nx, Ny, mg, mz, U, mu, Deltag, bd, num_its, skewed = False):
+def numitSweep(Nx, Ny, mg, mz, U, mu, Deltag, bd, num_its, skewed, alignment):
     Tc0 = 0.3
     t = 1.
     Tcs = np.zeros_like(num_its, dtype = float)
@@ -541,12 +492,12 @@ def numitSweep(Nx, Ny, mg, mz, U, mu, Deltag, bd, num_its, skewed = False):
         print(f"Running for numit = {num_it}")
         Tcs[i] = calc_Tc_binomial(Nx, Ny, Deltag, param, Tc0, bd, num_its[i],  skewed=skewed)
 
-    ax.plot(num_its, Tcs)
+    ax.plot(num_its, Tcs/0.1343)
     fig.suptitle(f"num_its=({num_its[0]},{num_its[-1]},Nx={Nx} Ny={Ny})m={mg}mz={mz}")
     ax.set_xlabel("num_iter")
     ax.set_ylabel("Tc")
     ic(Tcs)
-    ic(Tcs/Tcs[-1])
+    ic(Tcs/0.1343)
     ic(num_its)
     plt.savefig(f"numitSweepStef/Nx={Nx}Ny={Ny}numits=({num_its[0]},{num_its[-1]}m={mg}mz={mz}sw={skewed}.pdf", bbox_inches='tight')
 
@@ -557,11 +508,11 @@ def main(mg):
 
     t = 1.
     Nx = 20
-    Ny = 20
-    Tc0 = 0.3
+    Ny = 1
+    Tc0 = 0.2
 
     # Nys = np.arange(2, 12, 2)
-    NDelta = 20
+    NDelta = 100
     ic(NDelta)
     # mg = 0.0
     mz = 0.
@@ -597,9 +548,9 @@ def main(mg):
     #-----------------------------------------
 
     # Mg: 
-    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag, bd, num_it=NDelta, skewed = False)
+    Tc = Tc_one(Nx, Ny, mg, mz, t, Tc0,  U, mu, Deltag, bd, num_it=NDelta, skewed = False, alignment = "P")
     # ic(Tc)
-    # numitSweep(Nx= Nx, Ny=Ny, mg=mg, mz=mz, U=U, mu= mu, Deltag = Deltag, bd = bd, num_its = np.linspace(10, 500 , 10).astype(int), skewed = False)
+    # numitSweep(Nx= Nx, Ny=Ny, mg=mg, mz=mz, U=U, mu= mu, Deltag = Deltag, bd = bd, num_its = np.linspace(20, 500 , 10).astype(int), skewed = False, alignment = None)
     # plt.show()
         # mzs = np.linspace(0, 1.5, 15)
 
@@ -653,24 +604,24 @@ def main(mg):
     return Tc
 
 
-if __name__ == "__main__":
-    tic = time.time()
+# if __name__ == "__main__":
+#     tic = time.time()
 
-    mgs = np.linspace(0, 5.0, 20)
-    Tcs = np.zeros(len(mgs))
-    with ProcessPoolExecutor(max_workers=20) as executor:
-        for i, result in enumerate(executor.map(main, mgs)):
-            Tcs[i] = result
+#     mgs = np.linspace(0.5, 5., 1)
+#     Tcs = np.zeros(len(mgs))
+#     with ProcessPoolExecutor(max_workers=20) as executor:
+#         for i, result in enumerate(executor.map(main, mgs)):
+#             Tcs[i] = result
 
-    print(Tcs)
-    np.save(f"TcsReentranceMgs=({mgs[0]}, {mgs[-1]})ND=20", Tcs)
-    print("Time: ", time.time() - tic)
+#     print(Tcs)
+#     np.save(f"TcsReentranceMgs=({mgs[0]}, {mgs[-1]})ND=20Nx=8", Tcs)
+#     print("Time: ", time.time() - tic)
 
-    # # print(Tcs)
-    # plt.plot(mgs, Tcs)
-    # plt.show()
-# main(0.0)
-# main(1.0)
+#     # # print(Tcs)
+#     # plt.plot(mgs, Tcs)
+#     # plt.show()
+# # main(0.0)
+# # main(1.0)
 
 # # Paralellization --------------------------------------
 # """def mpwrap(mg):
@@ -702,3 +653,20 @@ if __name__ == "__main__":
 #         proc.join()
 
 # # ----------------------------------------------------------------------
+
+# from multiprocess import Process, Queue
+
+from multiprocess import Pool
+if __name__ == "__main__":
+    tic = time.time()
+    # def f(x): return x*x
+    mgs = np.linspace(0, 0.5, 20)
+    with  Pool(len(mgs)) as p:
+       
+
+        result = p.map(main, mgs)
+    ic(result)
+    np.save("mgdata", np.array([mgs, result]))
+    # ic(result.get())
+    tac = time.time()
+    ic(tac - tic)

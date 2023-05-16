@@ -31,7 +31,7 @@ I2, sigmax, sigmay, sigmaz = make_sigmas()
 
 
 @njit
-def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed, F = 0, V = 0):
+def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, param, bd, skewed):
     t, U, mu, mg, mzg = param
     H = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
     # V = 2
@@ -115,21 +115,24 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed, F = 0, V = 0):
             # print(ix, iy, m, mz, Delta_arr[iy, ix])
             # Diagonal term includes mu, Delta (s-wave) and ferromagnetism
             # print(ix, iy, m, mz)
-            H[i,i] = nb_block(((mu*I2  + mz *sigmaz, Delta_arr[iy, ix] * (-1j * sigmay) )  ,
-                               (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz *sigmaz ) ) ) # With ferromagnetism
+            H[i,i] = nb_block(((mu*I2  + mz_arr[iy, ix] *sigmaz, Delta_arr[iy, ix] * (-1j * sigmay) )  ,
+                               (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz_arr[iy, ix] *sigmaz ) ) ) # With ferromagnetism
     
             if not skewed:
                 # x-hopping, m = mg --------------------------------------------------------------------
                 # Contribution from the right, only if not at the right edge, and special case at boundary
                 if ix < Nx - 1:
-                    H[i, i + 1] = nb_block(((t * I2 + 0.5*(1 + zetaR)*m*sigmaz , 0 * I2),
-                                            (0 * I2                           , -t * I2 - 0.5*(1 + zetaR)*m*sigmaz)))
+                    m = min(m_arr[iy, ix], m_arr[iy, ix+1])
+                    H[i, i + 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                                            (0 * I2                           , -t * I2 - m*sigmaz)))
                 # H[i, (i + 1)%(Nx*Ny)] += F[i, i+ 1]
 
                 # Contrbution from the left, only if not on the left edge
                 if ix > 0:
-                    H[i, i - 1] = nb_block(((t * I2 + 0.5*(1 + zetaL)*m*sigmaz , 0 * I2),
-                                            (0 * I2, -t * I2 - 0.5*(1 + zetaL)*m*sigmaz)))
+                    m = min(m_arr[iy, ix], m_arr[iy, ix-1])
+
+                    H[i, i - 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                                            (0 * I2, -t * I2 - m*sigmaz)))
                     # H[i, i - 1] += F[i, i-1]
 
                 # y hopping, hav3 set m -> -m
@@ -143,6 +146,11 @@ def make_H_numba(Nx, Ny, Delta_arr, param, bd, skewed, F = 0, V = 0):
                 if not Ny == 1:
                     # if  iy < Ny - 1 :
                     # From down
+                    assert m_arr[iy, ix] == m_arr[(iy + 1)%Ny, ix]
+                    assert m_arr[iy, ix] == m_arr[iy - 1, ix]
+
+                    m = m_arr[iy, ix]
+
                     H[i, (i + Nx) % (Nx*Ny)] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
                                                          (0 * I2, -t * I2 + m*sigmaz)))
                     # H[i, (i + Nx) % (Nx*Ny)] += F[i, (i + Nx) % (Nx*Ny) ]

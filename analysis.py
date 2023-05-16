@@ -10,8 +10,8 @@ from matplotlib import pyplot as plt
 # plt.legend()
 # plt.show()
 
-mgs = np.linspace(0, 5, 20)
-TcsRe = np.load("TcsReentranceMgs=(0.0, 5.0)ND=20.npy")
+# mgs = np.linspace(0, 2, 20)
+mgs, Tcs = np.load("mgdata.npy")
 
-plt.plot(mgs, TcsRe)
+plt.plot(mgs, Tcs)
 plt.show()
