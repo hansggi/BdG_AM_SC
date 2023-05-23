@@ -1,6 +1,6 @@
 import numpy as np
 from numba import njit
-
+from icecream import ic
 def make_sigmas():
     I2 = np.identity(2, dtype = "complex128")
 
@@ -31,42 +31,10 @@ I2, sigmax, sigmay, sigmaz = make_sigmas()
 
 
 @njit
-def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, param, bd, skewed):
-    t, U, mu, mg, mzg = param
+def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
+    t = 1. # For clarity in the terms below
     H = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
-    # V = 2
-    # if F ==0:
-    #     F = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
-    #     F0 = np.zeros((Nx*Ny, Nx*Ny))
-    #     # for ix in range(Nx):
-    #     #     for iy in range(Ny):
-    #     #         i = ix + Nx *iy 
 
-    #     #         # x-interaction
-                
-    #     #         if ix < Nx - 1 :
-    #     #             ur = np.array( [[0,                  - 2 * V * F0[i, i+1]],
-    #     #                             [2* V * F0[i, i +1], 0                    ]])
-                    
-    #     #             F[i, i + 1] = nb_block(((0. * I2,             ur),
-    #     #                                     (- np.conjugate(ur), 0.*I2)))
-    #     #         # if ix > 0:
-    #     #         #     ur = np.array( [[0, - 2 * V * F[i, i - 1]],
-    #     #         #                     [2* V * F[i - 1, i], 0]])
-    #     #         #     F[i, i + 1] = nb_block(((0 * I2,             ur),
-    #     #         #                             (- np.conjugate(ur), 0*I2))) 
-    #     #         # # if iy < Ny - 1 :
-    #     #         # ur = np.array( [[0, - 2 * V * F[i, i + Nx]],
-    #     #         #                 [2* V * F[i + Nx, i], 0]])
-    #     #         # F[i, i + 1] = nb_block(((0 * I2,             ur),
-    #     #         #                         (- np.conjugate(ur), 0*I2)))    
-    #     #         # # if iy > 0 :
-    #     #         # ur = np.array( [[0, - 2 * V * F[i, i - Nx]],
-    #     #         #                 [2* V * F[i -Nx, i], 0]])
-    #     #         # F[i, i + 1] = nb_block(((0 * I2,             ur),
-    #     #         #                         (- np.conjugate(ur), 0*I2)))   
-
-    m = mg
     for ix in range(0, Nx):
         for iy in range(0, Ny):
             i = ix + Nx *iy
@@ -98,78 +66,69 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, param, bd, skewed):
                 zetaR = -1."""
             
             # Equiv:
-            if ix < bd[0] or ix >= bd[1]:
-                mz = mzg
-                if ix < bd[0] or ix > bd[1]: 
-                    zetaL = 1.
-                else:
-                    zetaL = -1
-            else:
-                mz = 0.
-                zetaL = -1.
+            # if ix < bd[0] or ix >= bd[1]:
+            #     mz = mzg
+            #     if ix < bd[0] or ix > bd[1]: 
+            #         zetaL = 1.
+            #     else:
+            #         zetaL = -1
+            # else:
+            #     mz = 0.
+            #     zetaL = -1.
             
-            if ix < bd[0] - 1 or ix >= bd[1]:
-                zetaR = 1.
-            else:
-                zetaR = -1.
+            # if ix < bd[0] - 1 or ix >= bd[1]:
+            #     zetaR = 1.
+            # else:
+            #     zetaR = -1.
             # print(ix, iy, m, mz, Delta_arr[iy, ix])
             # Diagonal term includes mu, Delta (s-wave) and ferromagnetism
-            # print(ix, iy, m, mz)
-            H[i,i] = nb_block(((mu*I2  + mz_arr[iy, ix] *sigmaz, Delta_arr[iy, ix] * (-1j * sigmay) )  ,
-                               (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz_arr[iy, ix] *sigmaz ) ) ) # With ferromagnetism
+
+            H[i,i] = nb_block(((mu*I2  + mz_arr[iy, ix] *sigmaz,             Delta_arr[iy, ix] * (-1j * sigmay) )  ,
+                               (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz_arr[iy, ix] *sigmaz     ) ) )
     
             if not skewed:
-                # x-hopping, m = mg --------------------------------------------------------------------
-                # Contribution from the right, only if not at the right edge, and special case at boundary
+                # Contribution from the right, only if not at the right edge. 
                 if ix < Nx - 1:
-                    m = min(m_arr[iy, ix], m_arr[iy, ix+1])
+                    m = min(m_arr[iy, ix], m_arr[iy, ix+1]) # To make sure only when both sites are within the altermanget
+                    # m = (m_arr[iy, ix] + m_arr[iy, ix+1])  / 2
                     H[i, i + 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                             (0 * I2                           , -t * I2 - m*sigmaz)))
-                # H[i, (i + 1)%(Nx*Ny)] += F[i, i+ 1]
 
                 # Contrbution from the left, only if not on the left edge
                 if ix > 0:
                     m = min(m_arr[iy, ix], m_arr[iy, ix-1])
-
+                    # m = (m_arr[iy, ix] +m_arr[iy, ix-1]) / 2
                     H[i, i - 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                             (0 * I2, -t * I2 - m*sigmaz)))
-                    # H[i, i - 1] += F[i, i-1]
 
-                # y hopping, hav3 set m -> -m
-                # if ix <  bd:
-
-                #     m = -m  # Assume oposite here, this is the altermagnetism part
-                # else: 
-                #     m = 0
 
                 # IF not periodic, include the if tests below
                 if not Ny == 1:
                     # if  iy < Ny - 1 :
-                    # From down
-                    assert m_arr[iy, ix] == m_arr[(iy + 1)%Ny, ix]
-                    assert m_arr[iy, ix] == m_arr[iy - 1, ix]
+                    # -- From below --
+                    # assert m_arr[iy, ix] == m_arr[(iy + 1)%Ny, ix]
+                    # assert m_arr[iy, ix] == m_arr[iy - 1, ix]
 
                     m = m_arr[iy, ix]
 
                     H[i, (i + Nx) % (Nx*Ny)] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
-                                                         (0 * I2, -t * I2 + m*sigmaz)))
-                    # H[i, (i + Nx) % (Nx*Ny)] += F[i, (i + Nx) % (Nx*Ny) ]
+                                                         (0 * I2, -t * I2 + m*sigmaz))) # Note the oposite sign in the altermagnetic part.
+
                     # if iy  > 0: # Except iy = 0
-                        # From up
+                    # -- From above --
                     H[i, i - Nx] = nb_block(((t * I2 - m*sigmaz , 0 * I2            ),
                                              (0 * I2            , -t * I2 + m*sigmaz)))
                     
-                    # H[i, i - Nx] += F[i, i - Nx]
 # Skewed ---------------------------------------------------------------------------
             elif skewed: 
                 # m = mg
                 # print("THIS IS NOT VERIFIED!")
-                if ix < bd[0]:
-                    m = mg
-                    mz = mzg
-                else:
-                    m = 0
-                    mz = 0
+                # if ix < bd[0]:
+                #     m = m_arr[iy, ix]
+                #     mz = mz_arr[iy, ix]
+                # else:
+                #     m = 0
+                #     mz = 0
                 # Here, have used a system where the first row is further to the left than the second row etc,
                 # also, the boundary splits each row in two. 
                 # x-hopping------------------------ --
@@ -182,62 +141,73 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, param, bd, skewed):
                     # H[i, (i - Nx ) % (Nx*Ny) ] =nb_block(((t * I2,  0 * I2),
                     #                                     (0 * I2, -t * I2)))
                     # else:
+                    m = min(m_arr[iy, ix], m_arr[iy - 1, ix + 1])
                     H[i, (i - Nx)% (Nx*Ny)  ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                                           (0 * I2, -t * I2 - m*sigmaz)))
                         
                     # -- From the left --
                     if ix > 0:
                         #if ix == bd[0]: m already zero
+                        m = min(m_arr[iy, ix], m_arr[iy + 1, ix - 1])
                         H[i, (i + Nx - 1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                                                  (0 * I2, -t * I2 - m*sigmaz)))
 
                     # -- y hopping --
-                    m = -m # Assume oposite here, this is the altermagnetism part
 
                     # -- From above --
                     if ix > 0:
-                        H[i,( i - Nx -1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                                (0 * I2, -t * I2 - m*sigmaz)))
+                        m = min(m_arr[iy, ix], m_arr[iy - 1, ix - 1])
+                        H[i,( i - Nx -1)% (Nx*Ny) ] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                                (0 * I2, -t * I2 + m*sigmaz)))
                             
                     # -- From below --
                     # if ix == bd[0] -1:
                     #     H[i, (i + Nx ) % (Nx*Ny)] = nb_block(((t * I2  , 0 * I2),
                     #                                           (0 * I2, -t * I2 )))
                     # else:
-                    H[i, (i + Nx ) % (Nx*Ny)] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                        (0 * I2, -t * I2 - m*sigmaz)))
+                    m = min(m_arr[iy, ix], m_arr[iy + 1, ix])
+                    H[i, (i + Nx ) % (Nx*Ny)] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                        (0 * I2, -t * I2 + m*sigmaz)))
                 # ---------------------------------------------------------------------------
                 # On odd site in y-direction ------------------------------------------------
                 elif iy % 2 == 1 :
 
                     # From the right
                     if  ix  < Nx - 1:
-                        if ix == bd[0] -1:
-                            H[i, (i - Nx +1) % (Nx*Ny)] += nb_block(((t * I2 , 0 * I2),
-                                                        (0 * I2, -t * I2 )))
-                        else:
-                            H[i, (i - Nx +1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                        m = min(m_arr[iy, ix], m_arr[iy - 1, ix + 1])
+                        H[i, (i - Nx +1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                                          (0 * I2, -t * I2 - m*sigmaz)))
+                        # if ix == bd[0] -1:
+                        #     H[i, (i - Nx +1) % (Nx*Ny)] += nb_block(((t * I2 , 0 * I2),
+                        #                                         (0 * I2, -t * I2 )))
+                        # else:
+                        #     H[i, (i - Nx +1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                        #                                  (0 * I2, -t * I2 - m*sigmaz)))
                         
                     # -- From the left --
+                    m = min(m_arr[iy, ix], m_arr[iy + 1, ix])
                     H[i, (i + Nx) % (Nx*Ny)  ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                (0 * I2, -t * I2 - m*sigmaz)))
+                                                            (0 * I2, -t * I2 - m*sigmaz)))
 
                     # -- y hopping --
-                    m = -m # Assume oposite here, this is the altermagnetism part
 
                     # -- From above --
-                    H[i,( i - Nx % (Nx*Ny)) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                (0 * I2, -t * I2 - m*sigmaz)))
+                    m = min(m_arr[iy, ix], m_arr[iy - 1, ix])
+                    H[i,( i - Nx % (Nx*Ny)) ] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                (0 * I2, -t * I2 + m*sigmaz)))
                 
                     # -- From below --
                     if  ix < Nx - 1:
-                        if ix == bd[0] -1:
-                            H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2  , 0 * I2),
-                                                         (0 * I2, -t * I2 )))
-                        else:
-                            H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                         (0 * I2, -t * I2 - m*sigmaz)))
+                        m = min(m_arr[iy, ix], m_arr[iy + 1, ix +1])
+                        H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                                (0 * I2, -t * I2 + m*sigmaz)))
+                        
+                        # if ix == bd[0] -1:
+                        #     H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2  , 0 * I2),
+                        #                                              (0 * I2, -t * I2 )))
+                        # else:
+                        #     H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                        #                                         (0 * I2, -t * I2 + m*sigmaz)))
                 # # -------------------------------------------------------------------------------
     
     Hr = unpack_block_matrix(H, Nx, Ny)
@@ -246,141 +216,55 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, param, bd, skewed):
     # print(np.allclose(Hr, np.transpose(np.conjugate(Hr))))
     return Hr
 
+"""@njit
+def make_H_FT(Nx, Ny, m_arr0, mz_arr0, Delta_arr0, U, mu, bd, skewed):
+    t = 1. # For clarity in the terms below
+    H = np.zeros((Ny, Nx, Nx, 4, 4), dtype="complex128")
+    if m_arr0.shape == (Ny, Nx):
+        m_arr = m_arr0[Ny//2, :]
+    if mz_arr0.shape == (Ny, Nx):
+        mz_arr = mz_arr0[Ny//2, :]
+    if Delta_arr0.shape == (Ny, Nx):
+        Delta_arr = Delta_arr0[Ny//2, :]
 
-"""@njit()
-def make_H_numba_boundaryjumping(Nx, Ny, Delta_arr, param, bd, skewed):
-    t, U, mu, mg, mzg = param
-    H = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
-    for ix in range(0, Nx):
-            for iy in range(0, Ny):
-                i = ix + Nx *iy 
-                # Diagonal components in lattice space
-                if ix < bd: # AM left part, SC right part
-                    m = mg
-                    mz = mzg
-                elif bd ==0: # When we set bd = 0, assume we want ferromagnetism/ altermagnetism in the SC. Else we can set mg = 0 etc
-                    m = mg
-                    mz = mzg
-                else:
-                    m = 0
-                    mz = 0
+    
+    ks = 2 * np.pi * np.arange(0, Ny, 1)
 
-                H[i,i] = nb_block(((mu*I2  + mz *sigmaz, Delta_arr[iy, ix] * (-1j * sigmay) )  ,
-                                    (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz *sigmaz ) ) ) # With ferromagnetism
+    for nk, k in enumerate(ks):
+ 
+        for ix in range(0, Nx):
+            # ic(Delta_arr[ix])
+            # Diagonal term contains y-jumping!
+            H[nk,ix,ix] = nb_block((((2 * t*I2 - m_arr[ix]*sigmaz) * np.cos(k)+ mu*I2  + mz_arr[ix] *sigmaz,             Delta_arr[ix] * (-1j * sigmay) )  ,
+                                (np.conjugate(Delta_arr[ix])*1j*sigmay, -(2 * t*I2 - m_arr[ix]*sigmaz) * np.cos(k) - mu*I2 - mz_arr[ix] *sigmaz     ) ) )
 
+            if not skewed:
+                # Contribution from the right, only if not at the right edge. 
+                if ix < Nx - 1:
+                    # m = min(m_arr[iy, ix], m_arr[iy, ix+1]) # To make sure only when both sites are within the altermanget
+                    H[nk, ix, ix + 1] = nb_block(((t * I2 + m_arr[ix]*sigmaz , 0 * I2),
+                                              (0 * I2                           , -t * I2 - m_arr[ix]*sigmaz)))
 
-                # H[i,i] = nb_block(((mu*I2 , Delta_arr[iy, ix] * (-1j * sigmay) )  ,
-                #                     (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, -mu*I2) ) )
-                
-                if not skewed:
-    # x-hopping, m = mg --------------------------------------------------------------------
-                    # Contribution from the right, only if not at the right edge, and special case at boundary
-                    if ix < Nx - 1:
-                   
-                        H[i, i + 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                (0 * I2            , -t * I2 - m*sigmaz)))
-                        
-                    # Contrbution from the left, only if not on the left edge
-                    if ix > 0:
-                        if ix == bd:
-                            H[i, i - 1] = nb_block(((t * I2 + mg*sigmaz , 0 * I2),
-                                                (0 * I2, -t * I2 - mg*sigmaz)))
-                        else:
-                            H[i, i - 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                (0 * I2, -t * I2 - m*sigmaz)))
-                    # y hopping
-                    m = -m  # Assume oposite here, this is the altermagnetism part
+                # Contrbution from the left, only if not on the left edge
+                if ix > 0:
 
-                    # If below
-                    # IF not periodic, include the if tests below
-                    if  iy < Ny - 1 :
-                    #     # From down
-                        H[i, (i + Nx) % (Nx*Ny)] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                             (0 * I2, -t * I2 - m*sigmaz)))
-
-                    if iy  > 0: # Except iy = 0
-                        # From up
-                        H[i, i - Nx] = nb_block(((t * I2 + m*sigmaz , 0 * I2            ),
-                                                 (0 * I2            , -t * I2 - m*sigmaz)))
-# Skewed ---------------------------------------------------------------------------
-                elif skewed: 
-                    # print("THIS IS NOT VERIFIED!")
-                    # Here, have used a system where the first row is further to the left than the second row etc,
-                    # also, the boundary splits each row in two
-                    # x-hopping--------------------------
-
-                    # On even site in y- direction ----------------------------------------------------------
-                    if iy % 2 == 0:
-
-                        # -- From the right --
-                        if ix < Nx - 1 and iy > 0:
-                            H[i, i - Nx + 1 ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                            (0 * I2, -t * I2 - m*sigmaz)))
-                            
-                        # -- From the left --
-                        if  iy < Ny - 1:
-                            if ix == bd:
-                                H[i, i + Nx ] = nb_block(((t * I2 + mg*sigmaz , 0 * I2),
-                                                    (0 * I2, -t * I2 - mg*sigmaz)))
-                            else:
-                                H[i, i + Nx ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                        (0 * I2, -t * I2 - m*sigmaz)))
-
-                        # -- y hopping --
-                        m = -m # Assume oposite here, this is the altermagnetism part
-
-                        # -- From above --
-                        if iy > 0: 
-                            if ix == bd:
-                                H[i, i - Nx  ] = nb_block(((t * I2 + mg*sigmaz , 0 * I2),
-                                                        (0 * I2, -t * I2 - mg*sigmaz)))
-                            else:
-                                H[i, i - Nx  ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                        (0 * I2, -t * I2 - m*sigmaz)))
-                            
-                        # -- From below --
-                        if  ix < Nx - 1 and iy < Ny - 1:
-                                H[i, i + Nx + 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                    (0 * I2, -t * I2 - m*sigmaz)))
-                    # ---------------------------------------------------------------------------
-                    # On odd site in y-direction ------------------------------------------------
-                    else:
-
-                        # From the right
-                        if  iy > 0:
-                            
-                            H[i, i - Nx ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                            (0 * I2, -t * I2 - m*sigmaz)))
-                            
-                        # -- From the left --
-                        if ix > 0  and iy < Ny - 1:
-                            H[i, i + Nx  - 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                    (0 * I2, -t * I2 - m*sigmaz)))
-
-                        # -- y hopping --
-                        m = -m # Assume oposite here, this is the altermagnetism part
-
-                        # -- From above --
-                        if iy > 0 and ix > 0 : 
-                            H[i, i - Nx - 1 ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                        (0 * I2, -t * I2 - m*sigmaz)))
-                        
-                        # -- From below --
-                        if  iy < Ny - 1:
-                            H[i, i + Nx] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                    (0 * I2, -t * I2 - m*sigmaz)))
-                # # -------------------------------------------------------------------------------
-    # Hr = unpack_block_matrix(H, Nx, Ny)
-    # print(np.allclose(Hr, np.conjugate(Hr).T))
-    return unpack_block_matrix(H, Nx, Ny)
+                    H[nk, ix, ix - 1] = nb_block(((t * I2 + m_arr[ix]*sigmaz , 0 * I2),
+                                                  (0 * I2, -t * I2 - m_arr[ix]*sigmaz)))
+    
+    H_up = np.zeros((Ny, 4*Nx, 4*Nx), dtype="complex128")
+    for nk, k in enumerate(2 * np.pi * np.arange(0, Ny, 1)):
+        H_up[nk] = unpack_block_matrix(H[nk], Nx, Ny, FT=True)
+    return H
 
 """
+
+          
 def fd(E, T):
     # Assume equilibrium
     return (1 - np.tanh( E / ( 2 * T ))) / 2
 
 @njit
-def Delta_sc(gamma, D, U, T, Nx, Ny, bd):
+def Delta_sc(gamma, D, Ui, T):
     # NB: gamma and energies D must already be just positive eigenvalues
     u_up = gamma[0::4, :]
     u_dn = gamma[1::4, :]
@@ -388,13 +272,7 @@ def Delta_sc(gamma, D, U, T, Nx, Ny, bd):
     v_dn = gamma[3::4, :]
     # Make Ui
     # Ui = np.ones(Nx*Ny, dtype = complex).reshape(Ny, Nx)*U
-    U = U * (1. + 0j)
-    Ui = np.ones(Nx*Ny).reshape(Ny, Nx)*U
 
-    Ui[:, :bd[0]] = 0
-    if bd[1] < Nx:
-        Ui[:, bd[1]:] = 0
-    Ui = Ui.reshape((Nx*Ny))   
     # print(np.allclose(np.sum(u_up* np.conjugate(v_dn), axis = 1), -np.sum(u_dn* np.conjugate(v_up), axis = 1)))
     # print(np.sum(u_up* np.conjugate(v_dn), axis = 1), -np.sum(u_dn* np.conjugate(v_up), axis = 1))
     f  = (1 - np.tanh(  D / ( 2 * T ))) / 2
@@ -440,10 +318,15 @@ def F_sc(gamma, D, V, T, Nx, Ny, bd):
 
 
 @njit # ish speedup of this function of 10-20 for Nx = Ny = 50, so I guess smaller speedup for smaller matrices
-def unpack_block_matrix(H_block, Nx, Ny):
-    H_toreturn = np.zeros((4*Nx*Ny, 4*Nx*Ny), dtype = "complex128")
-    for i in range(Nx*Ny):
-        for j in range(Nx*Ny):
-            H_toreturn[4*i: 4*(i + 1), 4*j: 4* j + 4] = H_block[i, j]
-
+def unpack_block_matrix(H_block, Nx, Ny, FT = False):
+    if not FT:
+        H_toreturn = np.zeros((4*Nx*Ny, 4*Nx*Ny), dtype = "complex128")
+        for i in range(Nx*Ny):
+            for j in range(Nx*Ny):
+                H_toreturn[4*i: 4*(i + 1), 4*j: 4* j + 4] = H_block[i, j]
+    else:
+        H_toreturn = np.zeros((4*Nx, 4*Nx), dtype = "complex128")
+        for i in range(Nx):
+            for j in range(Nx):
+                H_toreturn[4*i: 4*(i + 1), 4*j: 4* j + 4] = H_block[i,j]
     return H_toreturn
