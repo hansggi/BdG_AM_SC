@@ -18,7 +18,6 @@ from icecream import ic
 # @njit()
 def does_Delta_increase(Nx, Ny,m_arr, mz_arr,  Deltag, T, Ui, mu, Delta_arr1, bd,  NDelta, skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
-    # t, U, mu, mg, mz = param
 
     Delta = Delta_arr1.copy()
     for i in range(NDelta):
@@ -101,7 +100,7 @@ def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, 
 
 # @njit()
 def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, num_it, skewed, alignment = None):
-    N = 15 # Look at, maybe not needed this accuracy
+    N = 18 # Look at, maybe not needed this accuracy
     if alignment == None:
         assert bd[1] >= Nx
     # The first calculation is the same for all temperatures --------------
@@ -109,11 +108,11 @@ def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, 
     # Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)#*(x - bd)**2*0.05 / 40**2
     
     H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed)
-
     assert np.allclose(H, np.conjugate(H.T), rtol=1e-08, atol=1e-08, equal_nan=False)
 
     D, gamma = np.linalg.eigh(H)
     D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
+
     # ---------------------------------------------------------------
 
     Ts_lower = 0
@@ -216,7 +215,12 @@ def make_system_normal(bd, U, mz, m, Deltag, Nx, Ny, alignment):
     # plt.imshow(m_arr)
     # plt.colorbar()
     # plt.show()
-
+    # plt.imshow(np.abs(Delta_arr))
+    # plt.colorbar()
+    # plt.show()    
+    # plt.imshow(np.abs(Ui))
+    # plt.colorbar()
+    # plt.show()
     if mz != 0:
 
         assert alignment == None
@@ -249,60 +253,84 @@ def make_system_one_material(bd, U, mz, m, Deltag, Nx, Ny):
 
 def plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed):
     x = np.arange(1, Nx + 1, 1)
-    ic(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
+    ic( T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
     # -- Plot Delta as f.o. x --
     fig, ax = plt.subplots()
-    ax.plot(x, Delta[Ny//2, :])
+    ax.plot(x, np.abs(Delta[Ny//2, :]))
     # ax.axvline(x = bd[0])
-    ax.axvline(x = bd[1])
-    ax.set_ylabel(r"\Delta at y = " + str(Ny//2))
+    # ax.axvline(x = bd[1])
+    ax.set_ylabel(r"$\Delta$ at y = " + str(Ny//2))
     ax.set_xlabel(f"x")
     plt.show()
 
 
     # -- Plot the particle number as f.o. x --
-    N_up, N_dn = N_sigma(gamma, D, T, Nx, Ny)
+    N_up, N_dn = np.abs(N_sigma(gamma, D, T, Nx, Ny))
 
     fig, ax = plt.subplots()
-    ax.plot(x, N_up[Ny//2, :], label = r"N_{\uparrow}")
-    ax.plot(x, N_dn[Ny//2, :], label = r"N_{\downarrow}")
+    ax.plot(x, N_up[Ny//2, :], label = r"N_\uparrow")
+    ax.plot(x, N_dn[Ny//2, :], label = r"N_\downarrow")
 
-    ax.set_ylabel(r"Particle density at = " + str(Ny//2))
+    ax.set_ylabel(r"Particle density at y = " + str(Ny//2))
     ax.set_xlabel(f"x")
+
+    fig.legend()
+
+    print("Nup tot: ", np.sum(N_up))
+    print("Ndn tot: ", np.sum(N_dn))
+    print("Ntot: ", np.sum(N_dn) + np.sum(N_up))
     plt.show()
 
 
 def main(mg):
     t = 1.
-    Nx = 20
-    Ny = 20
-    NDelta = 10
+    Nx = 30
+    Ny = 10
+    NDelta = 5
     Tc0 = 0.2
     mz = 0.
-    bd = np.array([10,  Nx ])
+    bd = np.array([Nx//3,  (2 *Nx)//3 ])
+    ic(bd)
     U = 1.7
     mu = -0.5
     Deltag = 1e-5 + 0.j
     tol = 1e-6 
-    alignment = None
+    alignment = "AP"
     skewed = False
-    
-    # Ui, mz_arr, m_arr, Delta_arr = make_system_normal(bd, U, mz, mg, Deltag, Nx, Ny, alignment)
-    Ui, mz_arr, m_arr, Delta_arr = make_system_one_material(bd, U, mz, mg, Deltag, Nx, Ny)
+    Ui, mz_arr, m_arr, Delta_arr = make_system_normal(bd, U, mz, mg, Deltag, Nx, Ny, alignment)
+    # Ui, mz_arr, m_arr, Delta_arr = make_system_one_material(bd, U, mz, mg, Deltag, Nx, Ny)
 
     Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, NDelta, skewed, alignment)
     # T = Tc
     # Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, tol, Ui, mu,T,  Tc0, bd, NDelta, skewed, alignment)
 
     # plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
-    return Tc, NDelta, Ny
+    return Tc, NDelta, Ny, Nx, bd
 
 
 from multiprocess import Pool
+
 if __name__ == "__main__":
+    # args = []
+    # for mg in range(10, 20):
+    #     # for Ny in range(10, 20):
+    #     args.append((mg, Nx, Ny, mz, mu, ))
+    
+    # def fun(Nx, Ny):
+    #     return Nx + Ny
+
+    # def wrapper(args):
+    #     #Nx, Ny = args
+    #     #return (Nx, Ny, fun(Nx, Ny))
+    #     return (args, fun(*args))
+    
+    # print([*map(lambda args: (args, fun(*args)), args)])
+
+
     tic = time.time()
     # def f(x): return x*x
-    mgs = np.linspace(0, .1, 50)
+    # mgs = np.linspace(0, .1, 20)
+    mgs = np.linspace(0., 0.5, 50)
     # Nxs = np.arange(12, 32, 1)
     # NDs = np.arange(500, 520, 20)
     result = np.zeros_like(mgs)
@@ -310,7 +338,7 @@ if __name__ == "__main__":
     for i, mg in enumerate(mgs):
         ic(mg)
         if i ==0:
-            result[i], NDelta, Ny = main(mg)
+            result[i], NDelta, Ny, Nx, bd = main(mg)
         
         else:
             result[i] = main(mg)[0]
@@ -319,14 +347,13 @@ if __name__ == "__main__":
 
     ic(NDelta, Ny)
     # with Pool(len(mgs)) as p:
-       
 
-    #     result = p.map(main, mgs)
+    # starmap
 
     ic(result)
     # np.save("AParallell_mgdata", np.array([mgs, result]))
     # np.save("testdata/Nxs_straight", np.array([Nxs, result]))
-    np.save(f"NewData/OneMatND={NDelta}Ny={Ny}", np.array([mgs, NDelta, Ny, result], dtype=object))
+    np.save(f"NewData/APND={NDelta}Ny={Ny}Nx={Nx}bd={bd}", np.array([mgs, NDelta, Ny, result], dtype=object))
     # # ic(result.get())
     tac = time.time()
     ic(tac-tic)

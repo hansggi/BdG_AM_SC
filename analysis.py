@@ -1,73 +1,84 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 
 
-"""Tcs = np.load(r"C:\Users\hansggi\OneDrive - NTNU\BdG\Tcs.npy", allow_pickle=True)
-mgs = np.linspace(0, 0.3, 20)
-plt.plot(mgs, Tcs, label = "straight")
-TcsSkew = np.load(r"C:\Users\hansggi\OneDrive - NTNU\BdG\TcsSkewed.npy", allow_pickle=True)
-plt.plot(mgs, TcsSkew, label = "skewed")
-plt.legend()
-plt.show()
+# -- The single material, not heterostructure part --
+"""mzs, NDelta, Ny, result = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/MzOneMatND=10Ny=10.npy", allow_pickle=True)
 
-# mgs = np.linspace(0, 2, 20)
-# mgs, TcsP = np.load("Parallell_mgdata.npy")
-# print(mgs)
+mgs, NDelta2, Ny2, result2 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/MgOneMatND=10Ny=10.npy", allow_pickle=True)
 
-# mgs, TcsAP = np.load("AParallell_mgdata.npy")
-# print(mgs)
-# TcTrue = 0.0971954345703125 # 500 NDelta, 20x20, mg = 0.2
-# plt.plot(mgs, TcsP, label = "P")
-# plt.plot(mgs, TcsAP, label = "AP")
-# plt.legend()
-# plt.show()
+font = {'size'   : 14}
+
+mpl.rc('font', **font)
+
+fig, ax = plt.subplots()
+
+ax.plot(mzs, result, label = "FM")
+ax.set_xlabel("Magnetic strength")
+ax.set_ylabel(r"Critical temperature $T_c$")
+ax.plot(mgs, result2, label = "AM")
+ax.legend(loc = "best")
 
 
-# mgs, TcsTestP = np.load("testdata\P_ND=15,Ny=5.npy")
-# mgs, TcsTestP2 = np.load("testdata\P_ND=100,Ny=5.npy")
-# mgs, TcsTestP3 = np.load("testdata\P_ND=200,Ny=5.npy", label = "Par")
+plt.tight_layout()
 
-# plt.plot(mgs, TcsTestP)
-# plt.plot(mgs, TcsTestP2)
-# plt.plot(mgs, TcsTestP, label = "P, ND=15")
-
-# mgs, TcsTestAP  = np.load("testdata\AP_ND=15,Ny=5.npy")
-# mgs, TcsTestAP2 = np.load("testdata\AP_ND=100,Ny=5.npy")
-# mgs, TcsTestAP3 = np.load("testdata\AP_ND=200,Ny=5.npy")
-
-# plt.plot(mgs, TcsTestAP, linestyle = "dashed", label = "AP, ND=15" )
-# plt.plot(mgs, TcsTestAP2)
-# plt.plot(mgs, TcsTestAP, label = "AP")
-
-
-mgs, TcsTestP  = np.load(r"C:\Users\hansggi\OneDrive - NTNU\BdG\testdata\Max_P_ND=15,Ny=5.npy")
-mgs, TcsTestAP  = np.load(r"C:\Users\hansggi\OneDrive - NTNU\BdG\testdata\Max_AP_ND=15,Ny=5.npy")
-
-# mgs, TcsTestAP2 = np.load("testdata\AP_ND=100,Ny=5.npy")
-# mgs, TcsTest = np.load("testdata\AP_ND=200,Ny=5.npy")
-
-plt.plot(mgs, TcsTestP, label = "P_max")
-plt.plot(mgs, TcsTestAP, label = "AP_max")
-
-# plt.xlabel("Altermagnet strength m")
-# plt.ylabel("Tc, averaging over SC")
-
-# plt.legend()
-# plt.show()
-
-mgs, TcsTestP  = np.load(r"C:\Users\hansggi\OneDrive - NTNU\BdG\testdata\Max_P_ND=15,Ny=20.npy")
-mgs, TcsTestAP  = np.load(r"C:\Users\hansggi\OneDrive - NTNU\BdG\testdata\Max_AP_ND=15,Ny=20.npy")
-
-# mgs, TcsTestAP2 = np.load("testdata\AP_ND=100,Ny=5.npy")
-# mgs, TcsTest = np.load("testdata\AP_ND=200,Ny=5.npy")
-
-# plt.plot(mgs, TcsTestP, label = "P_average")
-# plt.plot(mgs, TcsTestAP, label = "AP_average")
-
-plt.xlabel("Altermagnet strength m")
-plt.ylabel("Tc, averaging over SC")
-
-plt.legend()
+fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/onemat.pdf", format = "pdf", bbox_inches="tight")
 plt.show()"""
+# -- End --------------------------------------
 
-mgs, NDelta, Ny, result = np.load("NewData\OneMatND=1Ny)=10mgs10=[(0.0, 0.1)].npy")
+# -- Junction geometry part --
+"""mgsStraight, NDelta, Ny, resultStraight = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/STRAIGHT=30Ny=10.npy", allow_pickle=True)
+
+mgsSkewed, NDelta2, Ny2, resultSkewed = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/SKEWED=30Ny=10.npy", allow_pickle=True)
+
+font = {'size'   : 14}
+
+mpl.rc('font', **font)
+
+fig, ax = plt.subplots()
+print(resultStraight[0], resultSkewed[0])
+resultStraight = resultStraight / resultStraight[0]
+resultSkewed = resultSkewed / resultSkewed[0]
+ax.plot(mgsStraight, resultStraight, label = "Straight")
+ax.set_ylim(np.amin(resultStraight)*0.99, np.amax(resultStraight)*1.01)
+
+ax.plot(mgsSkewed, resultSkewed, label = "Skewed")
+ax.set_xlabel("Altermagnetic strength m")
+ax.set_ylabel(r"Critical temperature $T_c(m)/T_c(m=0)$")
+ax.legend(loc = "best")
+
+
+plt.tight_layout()
+
+fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/geometry.pdf", format = "pdf", bbox_inches="tight")
+plt.show()"""
+# -- End --------------------------
+
+# -- P/AP part --
+"""mgsP, NDelta, Ny, resultP = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/P=30Ny=10.npy", allow_pickle=True)
+
+mgsAP, NDelta2, Ny2, resultAP = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/AP=30Ny=10.npy", allow_pickle=True)
+
+font = {'size'   : 14}
+
+mpl.rc('font', **font)
+
+fig, ax = plt.subplots()
+print(resultP[0], resultAP[0])
+resultP = resultP / resultP[0]
+resultAP = resultAP / resultAP[0]
+ax.plot(mgsP, resultP, label = "P")
+ax.set_ylim(np.amin(resultP)*0.99, np.amax(resultP)*1.01)
+
+ax.plot(mgsAP, resultAP, label = "Skewed")
+ax.set_xlabel("Altermagnetic strength m")
+ax.set_ylabel(r"Critical temperature $T_c(m)/T_c(m=0)$")
+ax.legend(loc = "best")
+
+
+plt.tight_layout()
+
+fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/PAP.pdf", format = "pdf", bbox_inches="tight")
+plt.show()"""
+# -- End -----------------------

@@ -121,43 +121,28 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
                     
 # Skewed ---------------------------------------------------------------------------
             elif skewed: 
-                # m = mg
-                # print("THIS IS NOT VERIFIED!")
-                # if ix < bd[0]:
-                #     m = m_arr[iy, ix]
-                #     mz = mz_arr[iy, ix]
-                # else:
-                #     m = 0
-                #     mz = 0
                 # Here, have used a system where the first row is further to the left than the second row etc,
-                # also, the boundary splits each row in two. 
-                # x-hopping------------------------ --
-                assert Ny % 2 ==0
+                # also, the boundary splits each row in two. m_arr is NyxNx matrix, where indexing is as if
+                # the grid was square.
                 # On even site in y- direction ----------------------------------------------------------
+                assert Ny % 2 ==0 # will get errors if not, due to periodic bdc in y-direction
                 if iy % 2 == 0:
-
                     # -- From the right --
-                    # if ix == bd[0] -1 : # Just hopping, not atermagnetism, depends on both sites
-                    # H[i, (i - Nx ) % (Nx*Ny) ] =nb_block(((t * I2,  0 * I2),
-                    #                                     (0 * I2, -t * I2)))
-                    # else:
-                    m = min(m_arr[iy, ix], m_arr[iy - 1, ix + 1])
-                    H[i, (i - Nx)% (Nx*Ny)  ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                    m = min(m_arr[iy, ix], m_arr[(iy - 1)%Ny, ix ])
+                    H[i, (i - Nx)% (Nx*Ny)  ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                                           (0 * I2, -t * I2 - m*sigmaz)))
                         
                     # -- From the left --
                     if ix > 0:
-                        #if ix == bd[0]: m already zero
-                        m = min(m_arr[iy, ix], m_arr[iy + 1, ix - 1])
-                        H[i, (i + Nx - 1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                        m = min(m_arr[iy, ix], m_arr[(iy + 1)%Ny, ix - 1])
+                        H[i, (i + Nx - 1)% (Nx*Ny) ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                                                  (0 * I2, -t * I2 - m*sigmaz)))
 
-                    # -- y hopping --
-
+                    # -- y hopping, opposite sign for the altermangetic terms --
                     # -- From above --
                     if ix > 0:
-                        m = min(m_arr[iy, ix], m_arr[iy - 1, ix - 1])
-                        H[i,( i - Nx -1)% (Nx*Ny) ] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                        m = min(m_arr[iy, ix], m_arr[(iy - 1)%Ny, ix - 1])
+                        H[i,( i - Nx -1)% (Nx*Ny) ] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
                                                                 (0 * I2, -t * I2 + m*sigmaz)))
                             
                     # -- From below --
@@ -165,8 +150,8 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
                     #     H[i, (i + Nx ) % (Nx*Ny)] = nb_block(((t * I2  , 0 * I2),
                     #                                           (0 * I2, -t * I2 )))
                     # else:
-                    m = min(m_arr[iy, ix], m_arr[iy + 1, ix])
-                    H[i, (i + Nx ) % (Nx*Ny)] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                    m = min(m_arr[iy, ix], m_arr[(iy + 1)%Ny, ix])
+                    H[i, (i + Nx ) % (Nx*Ny)] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
                                                         (0 * I2, -t * I2 + m*sigmaz)))
                 # ---------------------------------------------------------------------------
                 # On odd site in y-direction ------------------------------------------------
@@ -174,9 +159,9 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
 
                     # From the right
                     if  ix  < Nx - 1:
-                        m = min(m_arr[iy, ix], m_arr[iy - 1, ix + 1])
-                        H[i, (i - Nx +1)% (Nx*Ny) ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
-                                                         (0 * I2, -t * I2 - m*sigmaz)))
+                        m = min(m_arr[iy, ix], m_arr[(iy - 1)%Ny, ix + 1])
+                        H[i, (i - Nx +1)% (Nx*Ny) ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                                                                 (0 * I2, -t * I2 - m*sigmaz)))
                         # if ix == bd[0] -1:
                         #     H[i, (i - Nx +1) % (Nx*Ny)] += nb_block(((t * I2 , 0 * I2),
                         #                                         (0 * I2, -t * I2 )))
@@ -185,22 +170,22 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
                         #                                  (0 * I2, -t * I2 - m*sigmaz)))
                         
                     # -- From the left --
-                    m = min(m_arr[iy, ix], m_arr[iy + 1, ix])
-                    H[i, (i + Nx) % (Nx*Ny)  ] += nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                    m = min(m_arr[iy, ix], m_arr[(iy + 1)%Ny, ix])
+                    H[i, (i + Nx) % (Nx*Ny)  ] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                                             (0 * I2, -t * I2 - m*sigmaz)))
 
                     # -- y hopping --
 
                     # -- From above --
-                    m = min(m_arr[iy, ix], m_arr[iy - 1, ix])
-                    H[i,( i - Nx % (Nx*Ny)) ] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
-                                                (0 * I2, -t * I2 + m*sigmaz)))
+                    m = min(m_arr[iy, ix], m_arr[(iy - 1)%Ny, ix])
+                    H[i,( i - Nx % (Nx*Ny)) ] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                           (0 * I2, -t * I2 + m*sigmaz)))
                 
                     # -- From below --
                     if  ix < Nx - 1:
-                        m = min(m_arr[iy, ix], m_arr[iy + 1, ix +1])
-                        H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2 - m*sigmaz , 0 * I2),
-                                                                (0 * I2, -t * I2 + m*sigmaz)))
+                        m = min(m_arr[iy, ix], m_arr[(iy + 1)%Ny, ix +1])
+                        H[i, (i + Nx + 1)% (Nx*Ny)] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                                 (0 * I2, -t * I2 + m*sigmaz)))
                         
                         # if ix == bd[0] -1:
                         #     H[i, (i + Nx + 1)% (Nx*Ny)] += nb_block(((t * I2  , 0 * I2),
@@ -214,7 +199,7 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
 
     # assert np.allclose(Hr, np.transpose(np.conjugate(Hr)))
     # print(np.allclose(Hr, np.transpose(np.conjugate(Hr))))
-    return Hr
+    return - Hr
 
 """@njit
 def make_H_FT(Nx, Ny, m_arr0, mz_arr0, Delta_arr0, U, mu, bd, skewed):
@@ -270,6 +255,7 @@ def Delta_sc(gamma, D, Ui, T):
     u_dn = gamma[1::4, :]
     v_up = gamma[2::4, :]
     v_dn = gamma[3::4, :]
+    # print(D[-1])
     # Make Ui
     # Ui = np.ones(Nx*Ny, dtype = complex).reshape(Ny, Nx)*U
 
@@ -278,7 +264,7 @@ def Delta_sc(gamma, D, Ui, T):
     f  = (1 - np.tanh(  D / ( 2 * T ))) / 2
     # fm = (1 - np.tanh( -D / ( 2 * T ))) / 2
     # -------------------------------------------------------------------
-    Delta_i = -Ui*np.sum(u_dn *np.conjugate(v_up) * f +       u_up * np.conjugate(v_dn)* (1 - f) , axis = 1) # Here, we used equilibrium explicitly to say (1-f(E)) = f(-E) 
+    Delta_i = Ui*np.sum(u_dn *np.conjugate(v_up) * f +       u_up * np.conjugate(v_dn)* (1 - f) , axis = 1) # Here, we used equilibrium explicitly to say (1-f(E)) = f(-E) 
     return Delta_i
 
 
@@ -298,12 +284,12 @@ def F_sc(gamma, D, V, T, Nx, Ny, bd):
             i = ix + Nx *iy
 
             if ix < Nx-1:
-                F[i, i + 1] = Vi[i]* np.sum(f(D, T) * ( np.conjugate(v_up[i])*u_dn[i+1] - u_up[i]* np.conjugate(v_dn[i + 1]) ) +   u_up[i]* np.conjugate(v_dn[i + 1]), axis = 1)
-                F[i + 1, i] = Vi[i]* np.sum(f(D, T) * ( np.conjugate(v_up[i+1])*u_dn[i] - u_up[i + 1]* np.conjugate(v_dn[i]) ) +   u_up[i + 1]* np.conjugate(v_dn[i]), axis = 1)
+                F[i, i + 1] = Vi[i]* np.sum(fd(D, T) * ( np.conjugate(v_up[i])*u_dn[i+1] - u_up[i]* np.conjugate(v_dn[i + 1]) ) +   u_up[i]* np.conjugate(v_dn[i + 1]), axis = 1)
+                F[i + 1, i] = Vi[i]* np.sum(fd(D, T) * ( np.conjugate(v_up[i+1])*u_dn[i] - u_up[i + 1]* np.conjugate(v_dn[i]) ) +   u_up[i + 1]* np.conjugate(v_dn[i]), axis = 1)
 
             if ix > 0:
-                F[i, i - 1] = Vi[i]* np.sum(f(D, T) * ( np.conjugate(v_up[i]) * u_dn[i - 1] - u_up[i] * np.conjugate(v_dn[i - 1]) ) +   u_up[i]* np.conjugate(v_dn[i - 1]), axis = 1)
-                F[i - 1, i] = Vi[i]* np.sum(f(D, T) * ( np.conjugate(v_up[i - 1]) * u_dn[i] - u_up[i - 1] * np.conjugate(v_dn[i]) ) +   u_up[i - 1]* np.conjugate(v_dn[i]), axis = 1)
+                F[i, i - 1] = Vi[i]* np.sum(fd(D, T) * ( np.conjugate(v_up[i]) * u_dn[i - 1] - u_up[i] * np.conjugate(v_dn[i - 1]) ) +   u_up[i]* np.conjugate(v_dn[i - 1]), axis = 1)
+                F[i - 1, i] = Vi[i]* np.sum(fd(D, T) * ( np.conjugate(v_up[i - 1]) * u_dn[i] - u_up[i - 1] * np.conjugate(v_dn[i]) ) +   u_up[i - 1]* np.conjugate(v_dn[i]), axis = 1)
 
             # if iy > 0:
             F[i, (i + Nx)%(Nx*Ny)] = Vi[i]* np.sum(f(D, T) * ( np.conjugate(v_up[i])*u_dn[(i + Nx) % (Nx*Ny)] - u_up[i]* np.conjugate(v_dn[(i + Nx) % (Nx*Ny)]) ) +   u_up[i]* np.conjugate(v_dn[(i+Nx)%(Nx*Ny)]), axis = 1)
