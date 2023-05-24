@@ -58,15 +58,15 @@ def does_Delta_increase(Nx, Ny,m_arr, mz_arr,  Deltag, T, Ui, mu, Delta_arr1, bd
 def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, bd, NDelta, skewed, alignment):
 
     done = False
-    Delta_old = (np.ones((Nx*Ny))*Deltag).reshape(Ny, Nx)*(1 + 0j)
+    Delta_old = Delta_arr
+    # Delta_old = (np.ones((Nx*Ny))*Deltag).reshape(Ny, Nx)*(1 + 0j)
     # Delta_old[:, :bd] = 0
-
     it = 0
-    if bd[1] < Nx:
-        Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + bd[1])//2])
+    # if bd[1] < Nx:
+    #     Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + bd[1])//2])
 
-    else:
-        Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + Nx)//2])    
+    # else:
+    #     Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + Nx)//2])    
 
     while not done:
         H = make_H_numba(Nx, Ny,m_arr, mz_arr, Delta_old, mu, skewed = skewed)
@@ -77,10 +77,11 @@ def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, 
 
         Delta_new = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
         # Delta_new = Delta_new_i.reshape(Ny, Nx)
-        if bd[1] < Nx:
-            Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + bd[1])//2]
-        else:
-            Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + Nx)//2]
+        Delta_bulk = np.average(np.abs(Delta_new))
+        # if bd[1] < Nx:
+        #     Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + bd[1])//2]
+        # else:
+        #     Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + Nx)//2]
         it += 1
         # Bulk method
         # if np.abs(Delta_bulk - Delta_old_bulk)  <= tol :
@@ -284,28 +285,30 @@ def plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu
 
 def main(mg):
     t = 1.
-    Nx = 30
-    Ny = 10
-    NDelta = 5
+    Nx = 20
+    Ny = 20
+    NDelta = 10
     Tc0 = 0.2
     mz = 0.
     bd = np.array([Nx//3,  (2 *Nx)//3 ])
+    # bd = np.array([10, 30])
+    bd = np.array([Nx, Nx])
     ic(bd)
     U = 1.7
     mu = -0.5
     Deltag = 1e-5 + 0.j
     tol = 1e-6 
-    alignment = "AP"
+    alignment = None
     skewed = False
-    Ui, mz_arr, m_arr, Delta_arr = make_system_normal(bd, U, mz, mg, Deltag, Nx, Ny, alignment)
-    # Ui, mz_arr, m_arr, Delta_arr = make_system_one_material(bd, U, mz, mg, Deltag, Nx, Ny)
+    # Ui, mz_arr, m_arr, Delta_arr = make_system_normal(bd, U, mz, mg, Deltag, Nx, Ny, alignment)
+    Ui, mz_arr, m_arr, Delta_arr = make_system_one_material(bd, U, mz, mg, Deltag, Nx, Ny)
 
     Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, NDelta, skewed, alignment)
     # T = Tc
     # Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, tol, Ui, mu,T,  Tc0, bd, NDelta, skewed, alignment)
 
     # plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
-    return Tc, NDelta, Ny, Nx, bd
+    return Tc, NDelta, Ny, Nx, bd, mu
 
 
 from multiprocess import Pool
@@ -330,7 +333,7 @@ if __name__ == "__main__":
     tic = time.time()
     # def f(x): return x*x
     # mgs = np.linspace(0, .1, 20)
-    mgs = np.linspace(0., 0.5, 50)
+    mgs = np.linspace(0., 0.1, 100)
     # Nxs = np.arange(12, 32, 1)
     # NDs = np.arange(500, 520, 20)
     result = np.zeros_like(mgs)
@@ -338,7 +341,7 @@ if __name__ == "__main__":
     for i, mg in enumerate(mgs):
         ic(mg)
         if i ==0:
-            result[i], NDelta, Ny, Nx, bd = main(mg)
+            result[i], NDelta, Ny, Nx, bd, mu = main(mg)
         
         else:
             result[i] = main(mg)[0]
@@ -353,7 +356,8 @@ if __name__ == "__main__":
     ic(result)
     # np.save("AParallell_mgdata", np.array([mgs, result]))
     # np.save("testdata/Nxs_straight", np.array([Nxs, result]))
-    np.save(f"NewData/APND={NDelta}Ny={Ny}Nx={Nx}bd={bd}", np.array([mgs, NDelta, Ny, result], dtype=object))
+    # np.save(f"NewData/APND={NDelta}Ny={Ny}Nx={Nx}bd={bd}", np.array([mgs, NDelta, Ny, result], dtype=object))
+    np.save(f"NewData/ONEMATMg={NDelta}Ny={Ny}Nx={Nx}mu={mu}", np.array([mgs, NDelta, Ny, result], dtype=object))
     # # ic(result.get())
     tac = time.time()
     ic(tac-tic)
