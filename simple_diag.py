@@ -16,12 +16,12 @@ from icecream import ic
 # from concurrent.futures import ProcessPoolExecutor
 
 # @njit()
-def does_Delta_increase(Nx, Ny,m_arr, mz_arr,  Deltag, T, Ui, mu, Delta_arr1, bd,  NDelta, skewed = False):
+def does_Delta_increase(Nx, Ny,m_arr, mz_arr,  Deltag, T, Ui, mu, Delta_arr1, bd,  NDelta, skewed, periodic):
     # Here, Deltag must be the guess, if Delta < Deltag, 
 
     Delta = Delta_arr1.copy()
     for i in range(NDelta):
-            H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta, mu, skewed)
+            H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta, mu, skewed, periodic)
 
             D, gamma = np.linalg.eigh(H)
             D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
@@ -55,21 +55,21 @@ def does_Delta_increase(Nx, Ny,m_arr, mz_arr,  Deltag, T, Ui, mu, Delta_arr1, bd
 
 
 # @njit(cache = True)
-def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, bd, NDelta, skewed, alignment):
+def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, bd, NDelta, skewed, alignment, periodic):
 
     done = False
-    Delta_old = (np.ones((Nx*Ny))*Deltag).reshape(Ny, Nx)*(1 + 0j)
+    Delta_old = Delta_arr.copy()
+    # Delta_old = (np.ones((Nx*Ny))*Deltag).reshape(Ny, Nx)*(1 + 0j)
     # Delta_old[:, :bd] = 0
-
     it = 0
-    if bd[1] < Nx:
-        Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + bd[1])//2])
+    # if bd[1] < Nx:
+    #     Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + bd[1])//2])
 
-    else:
-        Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + Nx)//2])    
+    # else:
+    #     Delta_old_bulk = np.abs(Delta_old[Ny//2, (bd[0] + Nx)//2])    
 
     while not done:
-        H = make_H_numba(Nx, Ny,m_arr, mz_arr, Delta_old, mu, skewed = skewed)
+        H = make_H_numba(Nx, Ny,m_arr, mz_arr, Delta_old, mu, skewed, periodic)
 
         D, gamma = np.linalg.eigh(H)
         D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
@@ -77,10 +77,11 @@ def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, 
 
         Delta_new = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
         # Delta_new = Delta_new_i.reshape(Ny, Nx)
-        if bd[1] < Nx:
-            Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + bd[1])//2]
-        else:
-            Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + Nx)//2]
+        # Delta_bulk = np.average(np.abs(Delta_new))
+        # if bd[1] < Nx:
+        #     Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + bd[1])//2]
+        # else:
+        #     Delta_bulk = np.abs(Delta_new)[Ny//2, (bd[0] + Nx)//2]
         it += 1
         # Bulk method
         # if np.abs(Delta_bulk - Delta_old_bulk)  <= tol :
@@ -89,17 +90,17 @@ def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag,tol, Ui, mu,T,  Tc0, 
         # Using max difference instead. Will not give the same plot as in the article, since T is a function of bulk Tc here
         if np.amax(np.abs(np.abs(Delta_new) - np.abs(Delta_old)))  <= tol :
             done = True
-
+            ic(it)
         # Delta_old = Delta_new
         Delta_old = Delta_new
         
-        Delta_old_bulk = Delta_bulk
+        # Delta_old_bulk = Delta_bulk
 
     # print("Used ", it, " iterations to calculate Delta self-consist.")
     return Delta_new, gamma, D
 
 # @njit()
-def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, num_it, skewed, alignment = None):
+def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, num_it, skewed, alignment, periodic):
     N = 18 # Look at, maybe not needed this accuracy
     if alignment == None:
         assert bd[1] >= Nx
@@ -107,7 +108,10 @@ def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, 
     # x = np.arange(0, Nx)
     # Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)#*(x - bd)**2*0.05 / 40**2
     
-    H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed)
+    H = make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed, periodic)
+    # plt.imshow(np.real(H - np.conjugate(H.T))[::4, ::4])
+    # plt.colorbar()
+    # plt.show()
     assert np.allclose(H, np.conjugate(H.T), rtol=1e-08, atol=1e-08, equal_nan=False)
 
     D, gamma = np.linalg.eigh(H)
@@ -124,7 +128,7 @@ def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, 
         Delta_arr1 = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
 
 
-        if does_Delta_increase(Nx, Ny, m_arr, mz_arr, Deltag, T, Ui, mu, Delta_arr1, bd, num_it, skewed=skewed): # Meaning that there is SC at this temp, need to go higher in T to find Tc
+        if does_Delta_increase(Nx, Ny, m_arr, mz_arr, Deltag, T, Ui, mu, Delta_arr1, bd, num_it, skewed, periodic): # Meaning that there is SC at this temp, need to go higher in T to find Tc
             Ts_lower = T
         else:
             Ts_upper = T 
@@ -282,30 +286,37 @@ def plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu
     plt.show()
 
 
-def main(mg):
+def main(mz):
     t = 1.
-    Nx = 30
+    Nx = 20
     Ny = 10
-    NDelta = 5
+    NDelta = 30
     Tc0 = 0.2
-    mz = 0.
+    mg = 0.
     bd = np.array([Nx//3,  (2 *Nx)//3 ])
-    ic(bd)
+    # bd = np.array([10, 30])
+    bd = np.array([Nx, Nx])
+    # ic(bd)
     U = 1.7
+    U = 3.4
     mu = -0.5
-    Deltag = 1e-5 + 0.j
-    tol = 1e-6 
-    alignment = "AP"
+    Deltag = 1e-4 + 0.j
+    tol = 1e-9 / 8
+    alignment = None
     skewed = False
-    Ui, mz_arr, m_arr, Delta_arr = make_system_normal(bd, U, mz, mg, Deltag, Nx, Ny, alignment)
-    # Ui, mz_arr, m_arr, Delta_arr = make_system_one_material(bd, U, mz, mg, Deltag, Nx, Ny)
+    periodic = np.array([True, True]) # x-direction, y-direction. Should only have x.dir for the one material thing.
+    # Ui, mz_arr, m_arr, Delta_arr = make_system_normal(bd, U, mz, mg, Deltag, Nx, Ny, alignment)
+    Ui, mz_arr, m_arr, Delta_arr = make_system_one_material(bd, U, mz, mg, Deltag, Nx, Ny)
 
-    Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, NDelta, skewed, alignment)
+    Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, Ui, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
+    ic(Tc)
     # T = Tc
-    # Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, tol, Ui, mu,T,  Tc0, bd, NDelta, skewed, alignment)
-
+    # Tc = None
+    T = 0
+    Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, Delta_arr, Deltag, tol, Ui, mu, T,  Tc0, bd, NDelta, skewed, alignment, periodic)
+    ic(np.average(np.abs(Delta)))
     # plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
-    return Tc, NDelta, Ny, Nx, bd
+    return Tc, np.average(np.abs(Delta)), NDelta, Ny, Nx, bd, mu, U
 
 
 from multiprocess import Pool
@@ -330,33 +341,36 @@ if __name__ == "__main__":
     tic = time.time()
     # def f(x): return x*x
     # mgs = np.linspace(0, .1, 20)
-    mgs = np.linspace(0., 0.5, 50)
+    # mgs = np.linspace(0.0, 0.05, 40)
+    mzs = np.arange(0., 0.2 + 0.001, 0.001)
     # Nxs = np.arange(12, 32, 1)
     # NDs = np.arange(500, 520, 20)
-    result = np.zeros_like(mgs)
+    result = np.zeros_like(mzs)
     tic =  time.time()
-    for i, mg in enumerate(mgs):
-        ic(mg)
+    Deltas = np.zeros_like(mzs)
+    for i, mz in enumerate(mzs):
+        ic(mz)
         if i ==0:
-            result[i], NDelta, Ny, Nx, bd = main(mg)
+            result[i], Deltas[i], NDelta, Ny, Nx, bd, mu, U = main(mz)
         
         else:
-            result[i] = main(mg)[0]
+            result[i], Deltas[i] = main(mz)[0:2] # 2 elemements
 
+        ic(Deltas[i])
         ic(result[i])
-
     ic(NDelta, Ny)
-    # with Pool(len(mgs)) as p:
+    # with Pool(len(mzs)) as p:
 
     # starmap
 
     ic(result)
-    # np.save("AParallell_mgdata", np.array([mgs, result]))
+    # np.save("AParallell_mgdata", np.array([mzs, result]))
     # np.save("testdata/Nxs_straight", np.array([Nxs, result]))
-    np.save(f"NewData/APND={NDelta}Ny={Ny}Nx={Nx}bd={bd}", np.array([mgs, NDelta, Ny, result], dtype=object))
+    # np.save(f"NewData/APND={NDelta}Ny={Ny}Nx={Nx}bd={bd}", np.array([mzs, NDelta, Ny, result], dtype=object))
+    np.save(f"NewData/ONEMATDDELTASMzND={NDelta}Ny={Ny}Nx={Nx}mu={mu}U={U}", np.array([mzs, NDelta, Ny, Deltas, result], dtype=object))
     # # ic(result.get())
     tac = time.time()
     ic(tac-tic)
-    plt.plot(mgs, result)
+    plt.plot(mzs, Deltas)
     plt.show()
     # ic(tac - tic)
