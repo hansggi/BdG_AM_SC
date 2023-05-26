@@ -31,10 +31,10 @@ I2, sigmax, sigmay, sigmaz = make_sigmas()
 
 
 @njit
-def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
+def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed, periodc):
     t = 1. # For clarity in the terms below
     H = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
-
+    periodicX, periodicY = periodc
     for ix in range(0, Nx):
         for iy in range(0, Ny):
             i = ix + Nx *iy
@@ -88,14 +88,14 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
     
             if not skewed:
                 # Contribution from the right, only if not at the right edge. 
-                if ix < Nx - 1:
-                    m = min(m_arr[iy, ix], m_arr[iy, ix+1]) # To make sure only when both sites are within the altermanget
+                if ix < Nx - 1 or periodicX:
+                    m = min(m_arr[iy, ix], m_arr[iy, (ix+1) % Nx]) # To make sure only when both sites are within the altermanget
                     # m = (m_arr[iy, ix] + m_arr[iy, ix+1])  / 2
-                    H[i, i + 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
+                    H[i, (i + 1) % (Nx*Ny)] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
                                             (0 * I2                           , -t * I2 - m*sigmaz)))
 
                 # Contrbution from the left, only if not on the left edge
-                if ix > 0:
+                if ix > 0 or periodicX:
                     m = min(m_arr[iy, ix], m_arr[iy, ix-1])
                     # m = (m_arr[iy, ix] +m_arr[iy, ix-1]) / 2
                     H[i, i - 1] = nb_block(((t * I2 + m*sigmaz , 0 * I2),
@@ -104,20 +104,18 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed):
 
                 # IF not periodic, include the if tests below
                 if not Ny == 1:
-                    # if  iy < Ny - 1 :
+
+                    if iy < Ny - 1 or periodicY:
                     # -- From below --
-                    # assert m_arr[iy, ix] == m_arr[(iy + 1)%Ny, ix]
-                    # assert m_arr[iy, ix] == m_arr[iy - 1, ix]
-
-                    m = m_arr[iy, ix]
-
-                    H[i, (i + Nx) % (Nx*Ny)] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
-                                                         (0 * I2, -t * I2 + m*sigmaz))) # Note the oposite sign in the altermagnetic part.
+                        m = m_arr[iy, ix]
+                        H[i, (i + Nx) % (Nx*Ny)] = nb_block(((t * I2 - m*sigmaz , 0 * I2),
+                                                            (0 * I2, -t * I2 + m*sigmaz))) # Note the oposite sign in the altermagnetic part.
 
                     # if iy  > 0: # Except iy = 0
                     # -- From above --
-                    H[i, i - Nx] = nb_block(((t * I2 - m*sigmaz , 0 * I2            ),
-                                             (0 * I2            , -t * I2 + m*sigmaz)))
+                    if iy >0 or periodicY:
+                        H[i, i - Nx] = nb_block(((t * I2 - m*sigmaz , 0 * I2            ),
+                                                (0 * I2            , -t * I2 + m*sigmaz)))
                     
 # Skewed ---------------------------------------------------------------------------
             elif skewed: 
