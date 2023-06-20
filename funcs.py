@@ -31,7 +31,7 @@ I2, sigmax, sigmay, sigmaz = make_sigmas()
 
 
 @njit
-def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed, periodc):
+def make_H_numba(Nx, Ny, m_arr, mz_arr,hx_arr, Delta_arr, mu, skewed, periodc):
     t = 1. # For clarity in the terms below
     H = np.zeros((Nx*Ny, Nx*Ny, 4, 4), dtype="complex128")
     periodicX, periodicY = periodc
@@ -83,8 +83,8 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr, Delta_arr, mu, skewed, periodc):
             # print(ix, iy, m, mz, Delta_arr[iy, ix])
             # Diagonal term includes mu, Delta (s-wave) and ferromagnetism
 
-            H[i,i] = nb_block(((mu*I2  + mz_arr[iy, ix] *sigmaz,             Delta_arr[iy, ix] * (-1j * sigmay) )  ,
-                               (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz_arr[iy, ix] *sigmaz     ) ) )
+            H[i,i] = nb_block(((mu*I2  + mz_arr[iy, ix] *sigmaz + hx_arr[iy, ix]*sigmax,             Delta_arr[iy, ix] * (-1j * sigmay) )  ,
+                               (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - mu*I2 - mz_arr[iy, ix] *sigmaz - hx_arr[iy, ix]*sigmax     ) ) )
     
             if not skewed:
                 # Contribution from the right, only if not at the right edge. 
