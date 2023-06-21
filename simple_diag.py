@@ -501,8 +501,8 @@ def run_straightskewed():
     mgs = np.arange(0, 1.0 + step, step )
     # Run spesific parameters:
     skewed = False
-    Nx = 10
-    Ny = 4
+    Nx = 12
+    Ny = 6
     NDelta = 10
     mz = 0
     hx = 0
