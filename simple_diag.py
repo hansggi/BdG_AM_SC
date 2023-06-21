@@ -358,6 +358,7 @@ def task_onematerial(Nx, Ny, NDelta, mz, hx, mg):
 
 
 def task_straightskewed(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM):
+    ic(mg, mz)
     # Constants
     U = 1.7
     mu = -0.5
@@ -523,11 +524,11 @@ def run_onemat(magnettype):
     print(items)
 
     with Pool() as pool:
-        Tcs = pool.starmap(task_onematerial, items, chunksize=10)
+        Tcs = pool.starmap(task_onematerial, items)
 
     tac = time.time()
     ic(tac - tic)
-    np.save(f"Newdata4/onemat/{magnettype}{(Nx, Ny, NDelta, mz, hx, mg)}", np.array(items))
+    np.save(f"Newdata4/onemat/{magnettype}{(Nx, Ny, NDelta, mz, hx, mg)}", np.array([items, Tcs], dtype = object))
 
     plt.plot(mgs, Tcs)
     plt.show()
@@ -546,7 +547,6 @@ def run_straightskewed(skewed, magnettype):
     tic = time.time()
     # Prepare for multiprocessing in the straight/skewed case
     numsteps = 100
-
     if magnettype == "AM":
         mgs = np.linspace(0, 1.0, numsteps )
         mz = 0
@@ -563,13 +563,14 @@ def run_straightskewed(skewed, magnettype):
 
     print(items)
     with Pool() as pool:
-        Tcs = pool.starmap(task_straightskewed, items, chunksize = 10)
+        Tcs = pool.starmap(task_straightskewed, items)
     tac = time.time()
+    print(Tcs)
     ic(tac - tic)
-    np.save(f"Newdata4/straightskewed/{magnettype}{skewed}{(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM)}", np.array(items, dtype=object))
+    np.save(f"Newdata4/straightskewed/{magnettype}{skewed}{(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM)}", np.array([items, Tcs], dtype=object))
 
-    plt.plot(mgs, Tcs)
-    plt.show()
+    # plt.plot(mgs, Tcs)
+    # plt.show()
     return Tcs
 
 def run_PAP(alignment, magnettype):
@@ -604,14 +605,13 @@ def run_PAP(alignment, magnettype):
     
     print(items)
     with Pool() as pool:
-        Tcs = pool.starmap(task_PAP, items, chunksize=5)
+        Tcs = pool.starmap(task_PAP, items)
 
     tac = time.time()
     print(tac - tic)
     print(f"Finished running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (including last value of magnetic strength): {(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}")
     
-    np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}", np.array(items, dtype=object))
-
+    np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}",  np.array([items, Tcs], dtype=object))
     plt.plot(mgs, Tcs)
     plt.show()
     return Tcs
