@@ -107,7 +107,7 @@ def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr,hx_arr, Delta_arr, Deltag, Ui, imps, 
     # x = np.arange(0, Nx)
     # Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)#*(x - bd)**2*0.05 / 40**2
     
-    H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, mu,imps, skewed, periodic)
+    H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, mu, imps, skewed, periodic)
     # plt.imshow(np.real(H - np.conjugate(H.T))[::4, ::4])
     # plt.colorbar()
     # plt.show()
@@ -193,7 +193,7 @@ def pairing_amplitude(gamma, D, T):
 
 
 
-def make_system_normal(bd, U, mz,hx, m, impdata, Deltag, Nx, Ny, alignment):
+def make_system_normal(bd, U, mz,hx, mg, impdata, Deltag, Nx, Ny, alignment):
 
     w_AM, w_SC, NfracAM, NfracSC = impdata
     imps = np.zeros((Ny, Nx))
@@ -217,15 +217,21 @@ def make_system_normal(bd, U, mz,hx, m, impdata, Deltag, Nx, Ny, alignment):
         Ui[:, bd[1]:] = 0
     Ui = Ui.reshape((Nx*Ny))   
 
-    m_arr = (np.ones((Nx*Ny)) * m).reshape(Ny, Nx)
-    m_arr[:, bd[0]:bd[1]] = 0
+    mg_arr = (np.ones((Nx*Ny)) * mg).reshape(Ny, Nx)
+    mg_arr[:, bd[0]:bd[1]] = 0
 
     hx_arr = (np.ones((Nx*Ny)) * hx).reshape(Ny, Nx)
     hx_arr[:, bd[0]:bd[1]] = 0
 
+    mz_arr = (np.ones((Ny*Nx))*mz).reshape(Ny, Nx)
+    mz_arr[:, bd[0]:bd[1]] = 0
+
+
     if alignment == "AP":
-        m_arr[:, bd[1]:]  *= -1
+        mg_arr[:, bd[1]:]  *= -1
         hx_arr[:, bd[1]:] *= -1
+        mz_arr[:, bd[1]:] *= -1
+
 
 
     # plt.imshow(m_arr)
@@ -239,12 +245,11 @@ def make_system_normal(bd, U, mz,hx, m, impdata, Deltag, Nx, Ny, alignment):
     # plt.show()
     if mz != 0:
 
-        assert alignment == None
+        assert alignment == None or alignment == "P"
 
-    mz_arr = (np.ones((Ny*Nx))*mz).reshape(Ny, Nx)
-    mz_arr[:, bd[0]:] = 0
 
-    return Ui, mz_arr, hx_arr, m_arr, Delta_arr, imps
+
+    return Ui, mz_arr, hx_arr, mg_arr, Delta_arr, imps
 
 def make_system_one_material(U, mz, hx, m, Deltag, Nx, Ny, w, Nfrac):
     Delta_arr = (np.ones((Nx*Ny))*Deltag).reshape(Ny, Nx)# To make it complex?
@@ -256,14 +261,9 @@ def make_system_one_material(U, mz, hx, m, Deltag, Nx, Ny, w, Nfrac):
 
 
     m_arr = (np.ones((Nx*Ny)) * m).reshape(Ny, Nx)
-
-
-
     # plt.imshow(m_arr)
     # plt.colorbar()
     # plt.show()
-
-
     mz_arr = (np.ones((Ny*Nx))*mz).reshape(Ny, Nx)
     hx_arr = (np.ones((Nx*Ny)) * hx).reshape(Ny, Nx)
 
@@ -337,7 +337,7 @@ def task_onematerial(Nx, Ny, NDelta, mz, hx, mg):
     # Constants
     U = 1.7
     mu = -0.5
-    Deltag = 1e-5 + 0.j
+    Deltag = 1e-4 + 0.j
     Tc0 = 0.2
 
     # Problem spesific constants
@@ -361,7 +361,7 @@ def task_straightskewed(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM):
     # Constants
     U = 1.7
     mu = -0.5
-    Deltag = 1e-5 + 0.j
+    Deltag = 1e-4 + 0.j
     Tc0 = 0.2
 
     # Problem spesific constants
@@ -374,154 +374,254 @@ def task_straightskewed(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM):
 
     # Make Hamiltonian parameters
     Ui, mz_arr, hx_arr, m_arr, Delta_arr, imps = make_system_normal(bd, U, mz, hx, mg, impdata, Deltag, Nx, Ny, alignment)
-
     Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
-
     return Tc
 
-def main():
-    Nx = 30
-    Ny = 20
-
-    NDelta = 10
-    Tc0 = 0.2
-
-    bd = np.array([10, 20])
-    # bd_Onemat = np.array([Nx, Nx])
-    # mg = 0.0
-    # hx = 0.1
-    # Make sure to set magnetism to zero if not already defined.
-    # mg = 0.02
-    # mg = 0.0
-    # make_impurities(Nx, Ny, bd, 0.1, int(Nx*Ny / 10))
-    try: mz
-    except NameError: mz = 0
-    try: mg
-    except NameError: mg = 0
-    try: hx
-    except NameError: hx = 0
-    # mg = 0.
-    # bd = np.array([Nx//3,  (2 *Nx)//3 ])
-    # bd = np.array([10, Nx - 10])
+def task_PAP(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM):
+    # Constants
     U = 1.7
     mu = -0.5
-    Deltag = 1e-5 + 0.j
-    # tol = 1e-10
-    alignment = "AP"
-    ic(alignment)
-    skewed = False
+    Deltag = 1e-4 + 0.j
+    Tc0 = 0.2
+    ic(mg, mz)
+
+    # Problem spesific constants
     periodic = np.array([False, True]) # x-direction, y-direction. Should only have x.dir for the one material thing.
-    ic(bd)
-
-    NfracAM = 0.2*0 # Fraction of lattice sites that will get impurities in AM
     NfracSC = 0.0 # Fraction of lattice sites that will get impurities in SC
-    w_AM = 1.0*0
     w_SC = 0.0
-    # A = np.zeros((10, 20))
-    # make_impurities(A, w_AM, NfracAM)
+    impdata = [wAM, w_SC, NfracAM, NfracSC]
+    skewed = False
 
-    impdata = [w_AM, w_SC, NfracAM, NfracSC]
+    # Make Hamiltonian parameters
+    Ui, mz_arr, hx_arr, m_arr, Delta_arr, imps = make_system_normal(bd, U, mz, hx, mg, impdata, Deltag, Nx, Ny, alignment)
+    Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
+    return Tc
 
 
-    # Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
-    # try: Tc
-    # except: Tc = 0
-    # ic(Tc)
-    # T = Tc
-    # Tc = None
-    # T = 0
-    # Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, tol, Ui, mu, T, skewed, alignment, periodic)
-    # ic(np.average(np.abs(Delta)))
 
-    # try: Delta
-    # except: Delta = 1
-    # plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
-    tic = time.time()
-    # def f(x): return x*x
-    # mgs = np.linspace(0, .1, 20)
-    # mgs = np.linspace(0.0, 0.05, 40)
-    # mzs = np.arange(0., 0.2 + 0.001, 0.001)
-    # mzs = np.arange(0., 0.2 + 0.02, 0.01)
-    # mgs =  np.arange(0.0, 1.0 + 0.01, 0.01)
-    mgs =  np.arange(0.0, 1.0 + 0.01, 0.01)
+# def main():
+#     Nx = 30
+#     Ny = 20
 
-    Tcs = np.zeros_like(mgs)
-    tic =  time.time()
-    Deltas = np.zeros_like(mgs)
-    ic( mz, hx, alignment, skewed, Nx, Ny, bd, U, mu, impdata)
+#     NDelta = 10
+#     Tc0 = 0.2
 
-    for i, mg in enumerate(mgs):    
-            ic(mg)
+#     bd = np.array([10, 20])
+#     # bd_Onemat = np.array([Nx, Nx])
+#     # mg = 0.0
+#     # hx = 0.1
+#     # Make sure to set magnetism to zero if not already defined.
+#     # mg = 0.02
+#     # mg = 0.0
+#     # make_impurities(Nx, Ny, bd, 0.1, int(Nx*Ny / 10))
+#     try: mz
+#     except NameError: mz = 0
+#     try: mg
+#     except NameError: mg = 0
+#     try: hx
+#     except NameError: hx = 0
+#     # mg = 0.
+#     # bd = np.array([Nx//3,  (2 *Nx)//3 ])
+#     # bd = np.array([10, Nx - 10])
+#     U = 1.7
+#     mu = -0.5
+#     Deltag = 1e-5 + 0.j
+#     # tol = 1e-10
+#     alignment = "AP"
+#     ic(alignment)
+#     skewed = False
+#     periodic = np.array([False, True]) # x-direction, y-direction. Should only have x.dir for the one material thing.
+#     ic(bd)
 
-            Ui, mz_arr, hx_arr,  m_arr, Delta_arr, imps = make_system_normal(bd, U, mz, hx, mg, impdata, Deltag, Nx, Ny, alignment)
+#     NfracAM = 0.2*0 # Fraction of lattice sites that will get impurities in AM
+#     NfracSC = 0.0 # Fraction of lattice sites that will get impurities in SC
+#     w_AM = 1.0*0
+#     w_SC = 0.0
+#     # A = np.zeros((10, 20))
+#     # make_impurities(A, w_AM, NfracAM)
 
-            Tcs[i] = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
+#     impdata = [w_AM, w_SC, NfracAM, NfracSC]
+
+
+#     # Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
+#     # try: Tc
+#     # except: Tc = 0
+#     # ic(Tc)
+#     # T = Tc
+#     # Tc = None
+#     # T = 0
+#     # Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, tol, Ui, mu, T, skewed, alignment, periodic)
+#     # ic(np.average(np.abs(Delta)))
+
+#     # try: Delta
+#     # except: Delta = 1
+#     # plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
+#     tic = time.time()
+#     # def f(x): return x*x
+#     # mgs = np.linspace(0, .1, 20)
+#     # mgs = np.linspace(0.0, 0.05, 40)
+#     # mzs = np.arange(0., 0.2 + 0.001, 0.001)
+#     # mzs = np.arange(0., 0.2 + 0.02, 0.01)
+#     # mgs =  np.arange(0.0, 1.0 + 0.01, 0.01)
+#     mgs =  np.arange(0.0, 1.0 + 0.01, 0.01)
+
+#     Tcs = np.zeros_like(mgs)
+#     tic =  time.time()
+#     Deltas = np.zeros_like(mgs)
+#     ic( mz, hx, alignment, skewed, Nx, Ny, bd, U, mu, impdata)
+
+#     for i, mg in enumerate(mgs):    
+#             ic(mg)
+
+#             Ui, mz_arr, hx_arr,  m_arr, Delta_arr, imps = make_system_normal(bd, U, mz, hx, mg, impdata, Deltag, Nx, Ny, alignment)
+
+#             Tcs[i] = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
         
 
-    np.save(f"NewData2/mg_al{alignment}sw{skewed}_ND={NDelta}Ny={Ny}Nx={Nx}mu={mu}bd{bd}.npy",  np.array([mgs, NDelta, Ny, Deltas, Tcs], dtype=object))
-    # np.save(f"IMPDATA/mg_al{alignment}sw{skewed}_ND={NDelta}Ny={Ny}Nx={Nx}mu={mu}deltag={deltag}.npy",  np.array([mgs, NDelta, Ny, Deltas, Tcs], dtype=object))
-    # Tcs_noimp = np.load("Noimp.npy")    
-    # np.save("NoImp", Tcs)
-    tac = time.time()
-    ic(tac-tic)
-    plt.plot(mgs, Tcs, label = "Tc")
+#     np.save(f"NewData2/mg_al{alignment}sw{skewed}_ND={NDelta}Ny={Ny}Nx={Nx}mu={mu}bd{bd}.npy",  np.array([mgs, NDelta, Ny, Deltas, Tcs], dtype=object))
+#     # np.save(f"IMPDATA/mg_al{alignment}sw{skewed}_ND={NDelta}Ny={Ny}Nx={Nx}mu={mu}deltag={deltag}.npy",  np.array([mgs, NDelta, Ny, Deltas, Tcs], dtype=object))
+#     # Tcs_noimp = np.load("Noimp.npy")    
+#     # np.save("NoImp", Tcs)
+#     tac = time.time()
+#     ic(tac-tic)
+#     plt.plot(mgs, Tcs, label = "Tc")
 
-    plt.legend()
-    plt.title(f"m={0.0}")
-    plt.show()
+#     plt.legend()
+#     plt.title(f"m={0.0}")
+#     plt.show()
 
 
 
 from multiprocessing.pool import Pool
 
-def run_onemat():
+def run_onemat(magnettype):
     # Prepare for multiprocessing in the Onemat case
-    step = 0.2
-    mgs = np.arange(0, 1.0 + step, step )
+    
     # Run spesific parameters:
-    Nx = 20
-    Ny = 20
+    Nx = 5
+    Ny = 5
     NDelta = 10
     mz = 0
     hx = 0
     items = []
-    for mg in mgs:
-        items.append((Nx, Ny, NDelta, mz, hx, mg))
+    numsteps = 100
+
+    tic = time.time()
+    if magnettype == "AM":
+        mgs = np.linspace(0, 1.0 , numsteps )
+        mz = 0
+        for mg in mgs:
+            items.append((Nx, Ny, NDelta, mz, hx, mg))
+    elif magnettype =="FM":
+        mzs = np.linspace(0, 1.0 , numsteps )
+        mg = 0
+        for mz in mzs:
+            items.append((Nx, Ny, NDelta, mz, hx, mg))
+    else:
+        raise NameError
+
     print(items)
+
     with Pool() as pool:
-        Tcs = pool.starmap(task_onematerial, items)
+        Tcs = pool.starmap(task_onematerial, items, chunksize=10)
+
+    tac = time.time()
+    ic(tac - tic)
+    np.save(f"Newdata4/onemat/{magnettype}{(Nx, Ny, NDelta, mz, hx, mg)}", np.array(items))
 
     plt.plot(mgs, Tcs)
     plt.show()
     return Tcs
 
-def run_straightskewed():
-    # Prepare for multiprocessing in the straight/skewed case
-    step = 0.01
-    mgs = np.arange(0, 1.0 + step, step )
+def run_straightskewed(skewed, magnettype):
+
     # Run spesific parameters:
-    skewed = False
-    Nx = 12
-    Ny = 6
+    Nx = 20
+    Ny = 20
     NDelta = 10
-    mz = 0
     hx = 0
     wAM = 0
     NfracAM = 0
     items = []
     tic = time.time()
-    for mg in mgs:
-        items.append((Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM))
+    # Prepare for multiprocessing in the straight/skewed case
+    numsteps = 100
+
+    if magnettype == "AM":
+        mgs = np.linspace(0, 1.0, numsteps )
+        mz = 0
+        for mg in mgs:
+            items.append((Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM))
+    elif magnettype =="FM":
+        mzs = np.linspace(0, 1.0 , numsteps )
+        mg = 0
+        for mz in mzs:
+            items.append((Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM))
+    else:
+        raise NameError
+
+
     print(items)
     with Pool() as pool:
-        Tcs = pool.starmap(task_straightskewed, items)
+        Tcs = pool.starmap(task_straightskewed, items, chunksize = 10)
     tac = time.time()
     ic(tac - tic)
+    np.save(f"Newdata4/straightskewed/{magnettype}{skewed}{(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM)}", np.array(items, dtype=object))
+
     plt.plot(mgs, Tcs)
     plt.show()
     return Tcs
 
+def run_PAP(alignment, magnettype):
+    # Prepare for multiprocessing in the straight/skewed case
+    numsteps = 100
+    # Run spesific parameters:
+    Nx = 35
+    Ny = 20
+    bd = [10, Nx - 10]
+    NDelta = 10
+    hx = 0
+    wAM = 0
+    NfracAM = 0
+    items = []
+    tic = time.time()
+    print(f"Running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (without magnets): {(Nx, Ny, bd, NDelta,  hx,  alignment, wAM, NfracAM)}")
+
+    if magnettype == "AM":
+        mgs = np.linspace(0, 1.0, numsteps )
+        mz = 0
+        for mg in mgs:
+            items.append((Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM))
+
+    elif magnettype =="FM":
+        assert alignment == "P"
+        mzs = np.linspace(0, 1.0 , numsteps )
+        mg = 0
+        for mz in mzs:
+            items.append((Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM))
+    else:
+        raise NameError
+    
+    print(items)
+    with Pool() as pool:
+        Tcs = pool.starmap(task_PAP, items, chunksize=5)
+
+    tac = time.time()
+    print(tac - tic)
+    print(f"Finished running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (including last value of magnetic strength): {(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}")
+    
+    np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}", np.array(items, dtype=object))
+
+    plt.plot(mgs, Tcs)
+    plt.show()
+    return Tcs
+
+# import sys
 if __name__ == "__main__":
     # run_onemat()
-    run_straightskewed()
+    # run_onemat("AM")
+    run_straightskewed(False, "AM")
+    # run_PAP("P", "AM")
+    # run_PAP("AP", "AM")
+    # run_PAP("P", "FM")
     # main()
