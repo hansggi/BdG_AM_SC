@@ -100,9 +100,9 @@ def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag,tol, Ui, mu,T
 
 # @njit()
 def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr,hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, num_it, skewed, alignment, periodic):
-    N = 18 # Look at, maybe not needed this accuracy
+    N = 15 # Look at, maybe not needed this accuracy
     if alignment == None:
-        assert bd[1] >= Nx
+        assert bd[1] == Nx
     # The first calculation is the same for all temperatures --------------
     # x = np.arange(0, Nx)
     # Delta_arr = (np.ones((Nx*Ny), dtype = complex)*Deltag).reshape(Ny, Nx)#*(x - bd)**2*0.05 / 40**2
@@ -234,7 +234,10 @@ def make_system_normal(bd, U, mz,hx, mg, impdata, Deltag, Nx, Ny, alignment):
 
 
 
-    # plt.imshow(m_arr)
+    # plt.imshow(mg_arr)
+    # # # plt.colorbar()
+    # plt.show()
+    # plt.imshow(mz_arr)
     # # plt.colorbar()
     # plt.show()
     # plt.imshow(np.abs(Delta_arr))
@@ -243,9 +246,6 @@ def make_system_normal(bd, U, mz,hx, mg, impdata, Deltag, Nx, Ny, alignment):
     # plt.imshow(np.abs(Ui))
     # plt.colorbar()
     # plt.show()
-    if mz != 0:
-
-        assert alignment == None or alignment == "P"
 
 
 
@@ -539,19 +539,21 @@ def run_straightskewed(skewed, magnettype):
     # Run spesific parameters:
     Nx = 20
     Ny = 20
-    NDelta = 10
+    NDelta = 15
     hx = 0
     wAM = 0
     NfracAM = 0
     items = []
     tic = time.time()
     # Prepare for multiprocessing in the straight/skewed case
-    numsteps = 100
+    numsteps = 4
+    NDeltas = np.array([110, 120, 130, 150])
     if magnettype == "AM":
-        mgs = np.linspace(0, 1.0, numsteps )
+        mgs = np.linspace(0, 0, numsteps )
+        mgs = np.zeros(4)
         mz = 0
-        for mg in mgs:
-            items.append((Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM))
+        for i, mg in enumerate(mgs):
+            items.append((Nx, Ny, NDeltas[i], mz, hx, mg, skewed, wAM, NfracAM))
     elif magnettype =="FM":
         mzs = np.linspace(0, 1.0 , numsteps )
         mg = 0
@@ -567,7 +569,7 @@ def run_straightskewed(skewed, magnettype):
     tac = time.time()
     print(Tcs)
     ic(tac - tic)
-    np.save(f"Newdata4/straightskewed/{magnettype}{skewed}{(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM)}", np.array([items, Tcs], dtype=object))
+    # np.save(f"Newdata4/straightskewed/NonPeriod{magnettype}{skewed}{(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM)}", np.array([items, Tcs], dtype=object))
 
     # plt.plot(mgs, Tcs)
     # plt.show()
@@ -588,14 +590,16 @@ def run_PAP(alignment, magnettype):
     tic = time.time()
     print(f"Running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (without magnets): {(Nx, Ny, bd, NDelta,  hx,  alignment, wAM, NfracAM)}")
 
+    numsteps = 4
+    NDeltas = np.array([1, 2, 3, 4])
     if magnettype == "AM":
-        mgs = np.linspace(0, 1.0, numsteps )
+        # mgs = np.linspace(0, 0, numsteps )
+        mgs = np.zeros(4)
         mz = 0
-        for mg in mgs:
-            items.append((Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM))
+        for i, mg in enumerate(mgs):
+            items.append((Nx, Ny, bd, NDeltas[i], mz, hx, mg, alignment, wAM, NfracAM))
 
     elif magnettype =="FM":
-        assert alignment == "P"
         mzs = np.linspace(0, 1.0 , numsteps )
         mg = 0
         for mz in mzs:
@@ -612,16 +616,23 @@ def run_PAP(alignment, magnettype):
     print(f"Finished running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (including last value of magnetic strength): {(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}")
     
     np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}",  np.array([items, Tcs], dtype=object))
-    plt.plot(mgs, Tcs)
-    plt.show()
+    # plt.plot(mgs, Tcs)
+    # plt.show()
     return Tcs
 
 # import sys
 if __name__ == "__main__":
     # run_onemat()
     # run_onemat("AM")
-    run_straightskewed(False, "AM")
+    # run_straightskewed(False, "AM")
+    run_straightskewed(True, "AM")
+    # run_straightskewed(False, "FM")
+    # run_straightskewed(True, "FM")
+
+
     # run_PAP("P", "AM")
     # run_PAP("AP", "AM")
     # run_PAP("P", "FM")
+    # run_PAP("AP", "FM")
+
     # main()
