@@ -4,8 +4,7 @@ import matplotlib as mpl
 from icecream import ic
 
 # -- The single material Delta (CC limit), not heterostructure part --
-
-mzs, NDelta, Ny, Deltas, Tcs1     = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData2/ONEMATDDELTASMzND=5Ny=20Nx=20mu=-0.5.npy", allow_pickle=True)
+"""mzs, NDelta, Ny, Deltas, Tcs1     = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData2/ONEMATDDELTASMzND=5Ny=20Nx=20mu=-0.5.npy", allow_pickle=True)
 mgs, NDelta2, Ny2, Deltas2, Tcs2 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData2/ONEMATDDELTASMgND=5Ny=20Nx=20mu=-0.5.npy", allow_pickle=True)
 # mgs3, NDelta2, Ny2, result3 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/ONEMATMg=10Ny=10Nx=20mu=0.0.npy", allow_pickle=True)
 # mgs4, NDelta2, Ny2, result4 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/ONEMATMg=10Ny=10Nx=20mu=0.5.npy", allow_pickle=True)
@@ -41,7 +40,7 @@ ic(Deltas[0], Deltas2[0])
 
 fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/onemat_Tcs.pdf", format = "pdf", bbox_inches="tight")
 # -- End --------------------------------------
-
+""
 
 # -- The single material Tc, not heterostructure part --
 
