@@ -40,42 +40,41 @@ def does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, 
         # print("Ran through", Delta_bulk)
         return True
 
-def does_Delta_increase_steff(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, Delta_arr1, bd,  NDelta, skewed, periodic):
-    # Here, Deltag must be the guess, if Delta < Deltag, 
-    StefNum = 8
-    Deltapp = np.zeros_like(Delta_arr1)
-    Deltap  = np.zeros_like(Delta_arr1)
-    Delta   = Delta_arr1.copy()
-    ind = np.nonzero(Delta)
-    print(Delta.shape)
+# def does_Delta_increase_steff(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, Delta_arr1, bd,  NDelta, skewed, periodic):
+#     # Here, Deltag must be the guess, if Delta < Deltag, 
+#     StefNum = 8
+#     Deltapp = np.zeros_like(Delta_arr1)
+#     Deltap  = np.zeros_like(Delta_arr1)
+#     Delta   = Delta_arr1.copy()
+#     ind = np.nonzero(Delta)
 
-    ic(T)
-    Change = np.zeros(NDelta)
-    for i in range(1, NDelta):
-        H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr, Delta, mu, imps, skewed, periodic)
-        D, gamma = np.linalg.eigh(H)
-        D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
+#     ic(T)
+#     Change = np.zeros(NDelta)
+#     for i in range(1, NDelta):
+#         H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr, Delta, mu, imps, skewed, periodic)
+#         D, gamma = np.linalg.eigh(H)
+#         D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
 
 
-        Deltapp = Deltap.copy()
-        Deltap = Delta.copy()
-        Delta = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
-        # print(Delta[-1, -1])
-        if i%StefNum==0:
-            # print("error")
-            Delta[ind] = Deltapp[ind] - (Deltap[ind] - Deltapp[ind])**2 / (Delta[ind] - 2 * Deltap[ind] + Deltapp[ind])
+#         Deltapp = Deltap.copy()
+#         Deltap = Delta.copy()
+#         Delta = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
+#         # print(Delta[-1, -1])
+#         if i%StefNum==0:
+#             # print("error")
+#             Delta[ind] = Deltapp[ind] - (Deltap[ind] - Deltapp[ind])**2 / (Delta[ind] - 2 * Deltap[ind] + Deltapp[ind])
 
-        # Change[i] = np.average(Delta - Deltap)
-        # print(i, Change[i])
+#         # Change[i] = np.average(Delta - Deltap)
+#         # print(i, Change[i])
 
-    Delta_bulk = np.median(np.abs(Delta[ind]))
+#     Delta_bulk = np.median(np.abs(Delta[ind]))
 
-    if Delta_bulk <= np.abs(Deltag):
-        # print("Ran through,", Delta_bulk)
-        return False
-    else:
-        # print("Ran through", Delta_bulk)
-        return True
+#     if Delta_bulk <= np.abs(Deltag):
+#         # print("Ran through,", Delta_bulk)
+#         return False
+#     else:
+#         # print("Ran through", Delta_bulk)
+#         return True
     
 # @njit(cache = True)
 def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag,tol, Ui, mu,T, skewed, alignment, periodic):
@@ -151,7 +150,7 @@ def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr,hx_arr, Delta_arr, Deltag, Ui, imps, 
         Delta_arr1 = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
 
 
-        if does_Delta_increase_steff(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu,imps,  Delta_arr1, bd, num_it, skewed, periodic): # Meaning that there is SC at this temp, need to go higher in T to find Tc
+        if does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu,imps,  Delta_arr1, bd, num_it, skewed, periodic): # Meaning that there is SC at this temp, need to go higher in T to find Tc
             Ts_lower = T
         else:
             Ts_upper = T 
@@ -637,13 +636,13 @@ def run_PAP(alignment, magnettype):
     print(f"Running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (without magnets): {(Nx, Ny, bd, NDelta,  hx,  alignment, wAM, NfracAM)}")
 
     numsteps = 1
-    # NDeltas = np.array([1, 2, 3, 4])
+    NDeltas = np.array([10, 20, 30, 100])
     if magnettype == "AM":
         mgs = np.linspace(0, 0, numsteps )
         # mgs = np.zeros(4)
         mz = 0
         for i, mg in enumerate(mgs):
-            items.append((Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM))
+            items.append((Nx, Ny, bd, NDeltas[i], mz, hx, mg, alignment, wAM, NfracAM))
 
     elif magnettype =="FM":
         mzs = np.linspace(0, 1.0 , numsteps )
