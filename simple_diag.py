@@ -19,6 +19,7 @@ from icecream import ic
 def does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, Delta_arr1, bd,  NDelta, skewed, periodic):
     # Here, Deltag must be the guess, if Delta < Deltag, 
     Delta = Delta_arr1.copy()
+    ic(T)
     for i in range(NDelta):
             H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr, Delta, mu, imps, skewed, periodic)
 
@@ -28,22 +29,9 @@ def does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, 
 
     # ind = np.nonzero(Delta)
     # Delta_bulk = np.average(np.abs(Delta[ind]))
-    Delta_bulk = np.median(np.abs(Delta))
+    ind = np.nonzero(Delta)
 
-    # if bd[1] < Nx:
-    #     Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + bd[1])//2])
-
-    # else:
-    #     Delta_bulk = np.abs(Delta[Ny//2, (bd[0] + Nx)//2])
-
-        
-        # if Delta_bulk > DeltaT[1] :
-        #     # print("Term after", i)
-        #     return True
-        
-        # elif Delta_bulk <= DeltaT[0]:
-        #     # print("Term after", i)
-        #     return False
+    Delta_bulk = np.median(np.abs(Delta[ind]))
 
     if Delta_bulk <= np.abs(Deltag):
         # print("Ran through,", Delta_bulk)
@@ -52,7 +40,43 @@ def does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, 
         # print("Ran through", Delta_bulk)
         return True
 
+def does_Delta_increase_steff(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, Delta_arr1, bd,  NDelta, skewed, periodic):
+    # Here, Deltag must be the guess, if Delta < Deltag, 
+    StefNum = 8
+    Deltapp = np.zeros_like(Delta_arr1)
+    Deltap  = np.zeros_like(Delta_arr1)
+    Delta   = Delta_arr1.copy()
+    ind = np.nonzero(Delta)
+    print(Delta.shape)
 
+    ic(T)
+    Change = np.zeros(NDelta)
+    for i in range(1, NDelta):
+        H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr, Delta, mu, imps, skewed, periodic)
+        D, gamma = np.linalg.eigh(H)
+        D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
+
+
+        Deltapp = Deltap.copy()
+        Deltap = Delta.copy()
+        Delta = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
+        # print(Delta[-1, -1])
+        if i%StefNum==0:
+            # print("error")
+            Delta[ind] = Deltapp[ind] - (Deltap[ind] - Deltapp[ind])**2 / (Delta[ind] - 2 * Deltap[ind] + Deltapp[ind])
+
+        # Change[i] = np.average(Delta - Deltap)
+        # print(i, Change[i])
+
+    Delta_bulk = np.median(np.abs(Delta[ind]))
+
+    if Delta_bulk <= np.abs(Deltag):
+        # print("Ran through,", Delta_bulk)
+        return False
+    else:
+        # print("Ran through", Delta_bulk)
+        return True
+    
 # @njit(cache = True)
 def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag,tol, Ui, mu,T, skewed, alignment, periodic):
 
@@ -127,7 +151,7 @@ def calc_Tc_binomial(Nx, Ny, m_arr, mz_arr,hx_arr, Delta_arr, Deltag, Ui, imps, 
         Delta_arr1 = Delta_sc(gamma, D, Ui, T).reshape(Ny, Nx)
 
 
-        if does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu,imps,  Delta_arr1, bd, num_it, skewed, periodic): # Meaning that there is SC at this temp, need to go higher in T to find Tc
+        if does_Delta_increase_steff(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu,imps,  Delta_arr1, bd, num_it, skewed, periodic): # Meaning that there is SC at this temp, need to go higher in T to find Tc
             Ts_lower = T
         else:
             Ts_upper = T 
@@ -378,6 +402,28 @@ def task_straightskewed(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM):
     Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
     return Tc
 
+def task_imp_oneval(Nx, Ny, NDelta, mz, hx, mg,wAM, NfracAM):
+    ic(mg, mz, wAM, NfracAM)
+    # Constants
+    U = 1.7
+    mu = -0.5
+    Deltag = 1e-4 + 0.j
+    Tc0 = 0.2
+
+    # Problem spesific constants
+    periodic = np.array([False, True]) # x-direction, y-direction. Should only have x.dir for the one material thing.
+    bd = np.array([Nx//2, Nx]) # SC to left, AM to right
+    NfracSC = 0.0 # Fraction of lattice sites that will get impurities in SC
+    w_SC = 0.0
+    impdata = [wAM, w_SC, NfracAM, NfracSC]
+    alignment = None
+    skewed = False
+    # Make Hamiltonian parameters
+
+    Ui, mz_arr, hx_arr, m_arr, Delta_arr, imps = make_system_normal(bd, U, mz, hx, mg, impdata, Deltag, Nx, Ny, alignment)
+    Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
+    return Tc
+
 def task_PAP(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM):
     # Constants
     U = 1.7
@@ -547,7 +593,7 @@ def run_straightskewed(skewed, magnettype):
     tic = time.time()
     # Prepare for multiprocessing in the straight/skewed case
     numsteps = 4
-    NDeltas = np.array([110, 120, 130, 150])
+    NDeltas = np.array([300, 350, 400, 500])
     if magnettype == "AM":
         mgs = np.linspace(0, 0, numsteps )
         mgs = np.zeros(4)
@@ -579,7 +625,7 @@ def run_PAP(alignment, magnettype):
     # Prepare for multiprocessing in the straight/skewed case
     numsteps = 100
     # Run spesific parameters:
-    Nx = 35
+    Nx = 40
     Ny = 20
     bd = [10, Nx - 10]
     NDelta = 10
@@ -590,14 +636,14 @@ def run_PAP(alignment, magnettype):
     tic = time.time()
     print(f"Running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (without magnets): {(Nx, Ny, bd, NDelta,  hx,  alignment, wAM, NfracAM)}")
 
-    numsteps = 4
-    NDeltas = np.array([1, 2, 3, 4])
+    numsteps = 1
+    # NDeltas = np.array([1, 2, 3, 4])
     if magnettype == "AM":
-        # mgs = np.linspace(0, 0, numsteps )
-        mgs = np.zeros(4)
+        mgs = np.linspace(0, 0, numsteps )
+        # mgs = np.zeros(4)
         mz = 0
         for i, mg in enumerate(mgs):
-            items.append((Nx, Ny, bd, NDeltas[i], mz, hx, mg, alignment, wAM, NfracAM))
+            items.append((Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM))
 
     elif magnettype =="FM":
         mzs = np.linspace(0, 1.0 , numsteps )
@@ -608,31 +654,74 @@ def run_PAP(alignment, magnettype):
         raise NameError
     
     print(items)
-    with Pool() as pool:
+    with Pool(20) as pool:
         Tcs = pool.starmap(task_PAP, items)
 
     tac = time.time()
     print(tac - tic)
     print(f"Finished running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (including last value of magnetic strength): {(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}")
-    
+    print(Tcs)
     np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}",  np.array([items, Tcs], dtype=object))
     # plt.plot(mgs, Tcs)
     # plt.show()
     return Tcs
 
+
+def run_imp_oneval(mg, mz, wAM, NfracAM, magnettype):
+    # Run spesific parameters:
+    Nx = 16
+    Ny = 4
+    NDelta = 10
+    hx = 0
+    items = []
+    tic = time.time()
+    # Prepare for multiprocessing in the straight/skewed case
+    numvals = 100 # Number of impurity configurations
+    if magnettype == "AM":
+        assert mz == 0
+        for i in range(numvals):
+            items.append((Nx, Ny, NDelta, mz, hx, mg, wAM, NfracAM))
+    elif magnettype =="FM":
+        assert mg == 0
+        for i in range(numvals):
+            items.append((Nx, Ny, NDelta, mz, hx, mg,  wAM, NfracAM))
+    else:
+        raise NameError
+
+
+    print(items)
+    with Pool() as pool:
+        Tcs = pool.starmap(task_imp_oneval, items)
+    tac = time.time()
+    print(Tcs)
+    item0 = (Nx, Ny, NDelta, mz, hx, mg, 0, 0)
+
+    Tc0 = task_imp_oneval(*item0)
+
+    ic(tac - tic)
+    np.save(f"Newdata4/imps/{magnettype}{mg}{mz}{(Nx, Ny), NDelta, wAM, NfracAM}", np.array([items, Tcs], dtype=object))
+
+    plt.plot(np.arange(numvals), Tcs)
+    plt.axhline(y=np.average(Tcs), label = "Average over imps", color = "orange")
+    plt.axhline(y=Tc0, label = "Without imps", color = "green")
+    plt.legend()
+    plt.show()
+    return Tcs
 # import sys
 if __name__ == "__main__":
     # run_onemat()
     # run_onemat("AM")
     # run_straightskewed(False, "AM")
-    run_straightskewed(True, "AM")
+    # run_straightskewed(False, "AM")
     # run_straightskewed(False, "FM")
     # run_straightskewed(True, "FM")
 
 
-    # run_PAP("P", "AM")
+    run_PAP("P", "AM")
     # run_PAP("AP", "AM")
     # run_PAP("P", "FM")
-    # run_PAP("AP", "FM")
+    # run_PAP("AP", "FM")   
 
+
+    # run_imp_oneval(0.3, 0, 1.0, 0.2, "AM")
     # main()

@@ -247,7 +247,8 @@ def numitSweep(Nx, Ny, mg, mz, U, mu, Deltag, bd, num_its, skewed, alignment):
 
 
 # @njit(cache = True)
-"""def does_Delta_increase_steff(Nx, Ny,m_arr, mz_arr, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
+"""
+def does_Delta_increase_steff(Nx, Ny,m_arr, mz_arr, Deltag, T, param, Delta_arr1, bd,  NDelta, skewed = False):
     # Here, Deltag must be the guess, if Delta < Deltag, 
     t, U, mu, mg, mz = param
     StefNum = 8000
