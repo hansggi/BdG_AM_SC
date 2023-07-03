@@ -39,50 +39,6 @@ def make_H_numba(Nx, Ny, m_arr, mz_arr,hx_arr, Delta_arr, mu,imps, skewed, perio
         for iy in range(0, Ny):
             i = ix + Nx *iy
 
-            # if ix <= bd: # AM left part, SC right part
-            #     m = mg
-            #     mz = mzg
-            # elif bd == 0: # When we set bd = 0, assume we want ferromagnetism/ altermagnetism in the SC. Else we can set mg = 0 etc
-            #     m = mg
-            #     mz = mzg
-            # else:
-            #     m = 0
-            #     mz = 0
-            """if ix == bd:
-                mz = 0.
-                zetaL = -1.
-            elif ix < bd:
-                mz = mzg
-                zetaL = 1.
-            else: 
-                mz = 0.
-                zetaL = -1.
-
-            if ix == bd - 1:
-                zetaR = -1.
-            elif ix < bd - 1:
-                zetaR = 1.
-            else: 
-                zetaR = -1."""
-            
-            # Equiv:
-            # if ix < bd[0] or ix >= bd[1]:
-            #     mz = mzg
-            #     if ix < bd[0] or ix > bd[1]: 
-            #         zetaL = 1.
-            #     else:
-            #         zetaL = -1
-            # else:
-            #     mz = 0.
-            #     zetaL = -1.
-            
-            # if ix < bd[0] - 1 or ix >= bd[1]:
-            #     zetaR = 1.
-            # else:
-            #     zetaR = -1.
-            # print(ix, iy, m, mz, Delta_arr[iy, ix])
-            # Diagonal term includes mu, Delta (s-wave) and ferromagnetism
-
             H[i,i] = nb_block((((mu - imps[iy, ix])*I2  + mz_arr[iy, ix] *sigmaz + hx_arr[iy, ix]*sigmax,             Delta_arr[iy, ix] * (-1j * sigmay) )  ,
                                (np.conjugate(Delta_arr[iy, ix])*1j*sigmay, - (mu - imps[iy, ix])*I2 - mz_arr[iy, ix] *sigmaz - hx_arr[iy, ix]*sigmax     ) ) )
     
