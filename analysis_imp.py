@@ -36,17 +36,14 @@ def getms(items, el):
 # plt.show()
 
 
-NDelta = 10
-itemsssAM, TcsssImps_AM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/AM0.00((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
-mgsImps = getms(itemsssAM, 5)
-TcsAv = np.average(TcsssImps_AM)
-print(TcsAv)
-# dTcs= np.sqrt(np.mean(TcsssImps_AM**2) - np.mean(TcsssImps_AM)**2)
-dTcs = np.std(TcsssImps_AM)
-print(dTcs)
-# print(itemsssAM)
-# print(mgsImps)
-Tc0AM = 0.0952
+# NDelta = 10
+# Tcs0 : m = mg, but w = 0
+# Tcs1 : m= 0, w = 0
+items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.0mz=0.0((15, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
+mgsImps = getms(items, 5)
+TcsAv = np.average(Tcs)
+dTcs = np.std(Tcs)
+ic(TcsAv, Tc0, Tc1, dTcs)
 plt.rcParams.update({
         "text.usetex": True,
         "font.family": "Times",
@@ -59,113 +56,119 @@ plt.rcParams.update({
 #     bottom=False,      # ticks along the bottom edge are off
 #     top=False,         # ticks along the top edge are off
 #     labelbottom=False) # labels along the bottom edge are off
-fig0, ax0 = plt.subplots(1,3, sharey=True, figsize = (15, 5))
+fig, ax = plt.subplots(1,3, sharey=True, figsize = (15, 5))
 
-ax0[0].set_xticklabels([])
-ax0[1].set_xticklabels([])
-ax0[2].set_xticklabels([])
-ax0[0].set_ylabel("$T_c$", fontsize = 32)
-fig, ax = plt.subplots()
+ax[0].set_xticklabels([])
+ax[1].set_xticklabels([])
+ax[2].set_xticklabels([])
+ax[0].set_ylabel("$T_c$", fontsize = 32)
+# fig, ax = plt.subplots()
 
-ax.plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
-ax.axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-ax.axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
-ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[0].plot(np.arange(len(mgsImps)), Tcs, label = "$T_{c,i}$")
+ax[0].axhline(y=TcsAv, label = r"$\langle T_c \rangle_{i}$", color = "orange")
+ax[0].axhline(y=Tc0, label = "$T_{c,0}$", color = "green")
+ax[0].axhline(y=Tc1, label = "$T_{c,0}(m=0)$", color = "purple")
 
-ax0[0].plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
-ax0[0].axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-ax0[0].axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
-ax0[0].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-ax0[0].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[0].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[0].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[0].set_xlabel("$i$")
+ax[0].set_title("m=0")
 
 
-ax.set_ylabel("$T_c$")
-ax.set_xlabel("$i$")
+items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.0mz=0.0((15, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
+mgsImps = getms(items, 5)
+TcsAv = np.average(Tcs)
+dTcs = np.std(Tcs)
+ic(TcsAv, Tc0, Tc1, dTcs)
+ax[1].plot(np.arange(len(mgsImps)), Tcs, label = "$T_{c,i}$")
+ax[1].axhline(y=TcsAv, label = r"$\langle T_c \rangle_{i}$", color = "orange")
+ax[1].axhline(y=Tc0, label = "$T_{c,0}$", color = "green")
+ax[1].axhline(y=Tc1, label = "$T_{c,0}(m=0)$", color = "purple")
+
+ax[1].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[1].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[1].set_xlabel("$i$")
+
+ax[1].set_title("m=0.75")
 plt.legend(loc = "best", fontsize = "small")
 
 plt.tight_layout()
-# plt.rcParams.update({
-#         "text.usetex": True,
-#         "font.family": "Times",
-#     })
-
-# plt.show()
-
-NDelta = 10
-itemsssAM, TcsssImps_AM, Tc0AM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/AMm=0.5mz=0((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
-mgsImps = getms(itemsssAM, 5)
-# print(mgsImps)
-TcsAv = np.average(TcsssImps_AM)
-dTcs = np.std(TcsssImps_AM)
-ic(dTcs)
-ic(Tc0AM, TcsAv, TcsAv / Tc0AM)
-# plt.rcParams.update({
-#         "text.usetex": True,
-#         "font.family": "Times",
-#         'font.size'   : 28
-#     })
-fig, ax = plt.subplots()
-
-
-ax.plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
-ax.axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-ax.axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
-ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-ax0[1].plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
-ax0[1].axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-ax0[1].axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
-ax0[1].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-ax0[1].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-ax.set_ylabel("$T_c$")
-ax.set_xlabel("$i$")
-plt.legend(loc = "best", fontsize = "small")
-
-plt.tight_layout()
-# plt.rcParams.update({
-#         "text.usetex": True,
-#         "font.family": "Times",
-#         'font.size'   : 22
-#     })
-
-# plt.show()
-
-NDelta = 10
-itemsssFM, TcsssImps_FM, Tc0FM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/FMm=0.0mz=0.5((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
-mzsImps = getms(itemsssFM, 3)
-TcsAv = np.average(TcsssImps_FM)
-dTcs = np.std(TcsssImps_FM)
-ic(dTcs)
-ic(Tc0FM, TcsAv, TcsAv / Tc0FM)
-# print(mzsImps)
-fig, ax = plt.subplots()
-
-ax.plot(np.arange(len(mzsImps)), TcsssImps_FM, label = "$T_{c,i}$")
-ax.axhline(y=np.average(TcsssImps_FM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-ax.axhline(y=Tc0FM, label = "$T_{c,0}$", color = "green")
-ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-ax0[2].plot(np.arange(len(mzsImps)), TcsssImps_FM, label = "$T_{c,i}$")
-ax0[2].axhline(y=np.average(TcsssImps_FM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-ax0[2].axhline(y=Tc0FM, label = "$T_{c,0}$", color = "green")
-ax0[2].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-ax0[2].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-
-ax.set_ylabel("$T_c$")
-ax.set_xlabel("$i$")
-plt.legend(loc = "best", fontsize = "small")
-
-plt.tight_layout()
-# plt.rcParams.update({
-#         "text.usetex": True,
-#         "font.family": "Times",
-#     })
-
 plt.show()
+
+# NDelta = 10
+# itemsssAM, TcsssImps_AM, Tc0AM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/AMm=0.5mz=0((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
+# mgsImps = getms(itemsssAM, 5)
+# # print(mgsImps)
+# TcsAv = np.average(TcsssImps_AM)
+# dTcs = np.std(TcsssImps_AM)
+# ic(dTcs)
+# ic(Tc0AM, TcsAv, TcsAv / Tc0AM)
+# # plt.rcParams.update({
+# #         "text.usetex": True,
+# #         "font.family": "Times",
+# #         'font.size'   : 28
+# #     })
+# fig, ax = plt.subplots()
+
+
+# ax.plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
+# ax.axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
+# ax.axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
+# ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+# ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+
+# ax0[1].plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
+# ax0[1].axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
+# ax0[1].axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
+# ax0[1].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+# ax0[1].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+
+# ax.set_ylabel("$T_c$")
+# ax.set_xlabel("$i$")
+# plt.legend(loc = "best", fontsize = "small")
+
+# plt.tight_layout()
+# # plt.rcParams.update({
+# #         "text.usetex": True,
+# #         "font.family": "Times",
+# #         'font.size'   : 22
+# #     })
+
+# # plt.show()
+
+# NDelta = 10
+# itemsssFM, TcsssImps_FM, Tc0FM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/FMm=0.0mz=0.5((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
+# mzsImps = getms(itemsssFM, 3)
+# TcsAv = np.average(TcsssImps_FM)
+# dTcs = np.std(TcsssImps_FM)
+# ic(dTcs)
+# ic(Tc0FM, TcsAv, TcsAv / Tc0FM)
+# # print(mzsImps)
+# fig, ax = plt.subplots()
+
+# ax.plot(np.arange(len(mzsImps)), TcsssImps_FM, label = "$T_{c,i}$")
+# ax.axhline(y=np.average(TcsssImps_FM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
+# ax.axhline(y=Tc0FM, label = "$T_{c,0}$", color = "green")
+# ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+# ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+
+# ax0[2].plot(np.arange(len(mzsImps)), TcsssImps_FM, label = "$T_{c,i}$")
+# ax0[2].axhline(y=np.average(TcsssImps_FM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
+# ax0[2].axhline(y=Tc0FM, label = "$T_{c,0}$", color = "green")
+# ax0[2].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+# ax0[2].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+
+
+# ax.set_ylabel("$T_c$")
+# ax.set_xlabel("$i$")
+# plt.legend(loc = "best", fontsize = "small")
+
+# plt.tight_layout()
+# # plt.rcParams.update({
+# #         "text.usetex": True,
+# #         "font.family": "Times",
+# #     })
+
+# plt.show()
 
 

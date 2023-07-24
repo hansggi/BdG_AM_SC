@@ -51,7 +51,7 @@ from icecream import ic
 # mgs3, NDelta2, Ny2, result3 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/ONEMATMg=10Ny=10Nx=20mu=0.0.npy", allow_pickle=True)
 # mgs4, NDelta2, Ny2, result4 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/ONEMATMg=10Ny=10Nx=20mu=0.5.npy", allow_pickle=True)
 # # mgs5, NDelta2, Ny2, result5 = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/NewData/ONEMATMg=10Ny=10Nx=20mu=-0.5.npy", allow_pickle=True)
-# 
+#
 # font = {'size'   : 14}
 
 # mpl.rc('font', **font)
@@ -85,29 +85,27 @@ from icecream import ic
 # -- End --------------------------------------
 
 
-
-
-
-
 # -- Junction geometry part --
-items, mgs_straight,  TcsStraight = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterAMFalse(15, 20, 30, 0, 0, 1.0, False, 0, 0).npy", allow_pickle=True)
+items, mgs_straight,  TcsStraight = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterAMFalse(15, 20, 30, 0, 0, 1.0, False, 0, 0).npy", allow_pickle=True)
 
-items, mgsSkewed,  TcsSkewed = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterAMTrue(15, 20, 30, 0, 0, 1.0, True, 0, 0).npy", allow_pickle=True)
-
-
-items, mzsStraight,  TcsFMStraight = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterFMFalse(15, 20, 30, 1.0, 0, 0, False, 0, 0).npy", allow_pickle=True)
-
-items, mzsSkewed,  TcsFMSkewed = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterFMTrue(15, 20, 30, 1.0, 0, 0, True, 0, 0).npy", allow_pickle=True)
+items, mgsSkewed,  TcsSkewed = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterAMTrue(15, 20, 30, 0, 0, 1.0, True, 0, 0).npy", allow_pickle=True)
 
 
-# font = {'size'   : 14}
+items, mzsStraight,  TcsFMStraight = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterFMFalse(15, 20, 30, 1.0, 0, 0, False, 0, 0).npy", allow_pickle=True)
 
-# mpl.rc('font', **font)
+items, mzsSkewed,  TcsFMSkewed = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterFMTrue(15, 20, 30, 1.0, 0, 0, True, 0, 0).npy", allow_pickle=True)
+
+print(items[0])
+
 plt.rcParams.update({
-        "text.usetex": True,
-        "font.family": "Times",
-        'font.size'   : 18
-    })
+    "text.usetex": True,
+    "font.family": "Times",
+    'font.size': 18
+})
 
 fig, ax = plt.subplots()
 print(TcsFMStraight[0], TcsStraight[0])
@@ -115,18 +113,17 @@ print(TcsFMSkewed[0], TcsSkewed[0])
 TcsStraight /= TcsStraight[0]
 TcsSkewed /= TcsSkewed[0]
 TcsFMStraight /= TcsFMStraight[0]
-TcsFMSkewed/= TcsFMSkewed[0]
+TcsFMSkewed /= TcsFMSkewed[0]
 
-ax.plot(mgs_straight, TcsStraight, label = "Straight AM")
-# ax.set_ylim(np.amin(resultStraight)*0.99, np.amax(resultStraight)*1.01)
+ax.plot(mgs_straight, TcsStraight, label="St AM")
 
-ax.plot(mgsSkewed, TcsSkewed, label = "Skewed AM")
-ax.plot(mzsStraight, TcsFMStraight, label = "Straight FM")
-ax.plot(mzsSkewed, TcsFMSkewed, label = "Skewed FM")
+ax.plot(mgsSkewed, TcsSkewed, label="Sk AM")
+ax.plot(mzsStraight, TcsFMStraight, label="St FM")
+ax.plot(mzsSkewed, TcsFMSkewed, label="Sk FM")
 
-ax.set_xlabel("Altermagnetic strength m")
+ax.set_xlabel("Magnetic strength")
 ax.set_ylabel(r" $T_c(m)/T_{c, 0}$")
-ax.legend(loc = "best")
+ax.legend(loc="upper left", frameon=False, ncols=2)
 
 
 plt.tight_layout()
@@ -135,14 +132,18 @@ plt.tight_layout()
 plt.show()
 
 
-items, mgs_straight,  TcsStraight = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterAMFalse(16, 20, 50, 0, 0, 1.0, False, 0, 0).npy", allow_pickle=True)
+items, mgs_straight,  TcsStraight = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterAMFalse(16, 20, 50, 0, 0, 1.0, False, 0, 0).npy", allow_pickle=True)
 
-items, mgsSkewed,  TcsSkewed = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterAMTrue(16, 20, 50, 0, 0, 1.0, True, 0, 0).npy", allow_pickle=True)
+items, mgsSkewed,  TcsSkewed = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterAMTrue(16, 20, 50, 0, 0, 1.0, True, 0, 0).npy", allow_pickle=True)
 
 
-items, mzsStraight,  TcsFMStraight = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterFMFalse(16, 20, 50, 1.0, 0, 0, False, 0, 0).npy", allow_pickle=True)
+items, mzsStraight,  TcsFMStraight = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterFMFalse(16, 20, 50, 1.0, 0, 0, False, 0, 0).npy", allow_pickle=True)
 
-items, mzsSkewed,  TcsFMSkewed = np.load("C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterFMTrue(16, 20, 50, 1.0, 0, 0, True, 0, 0).npy", allow_pickle=True)
+items, mzsSkewed,  TcsFMSkewed = np.load(
+    "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterFMTrue(16, 20, 50, 1.0, 0, 0, True, 0, 0).npy", allow_pickle=True)
 
 
 # font = {'size'   : 14}
@@ -155,18 +156,19 @@ print(TcsFMSkewed[0], TcsSkewed[0])
 TcsStraight /= TcsStraight[0]
 TcsSkewed /= TcsSkewed[0]
 TcsFMStraight /= TcsFMStraight[0]
-TcsFMSkewed/= TcsFMSkewed[0]
+TcsFMSkewed /= TcsFMSkewed[0]
 
-ax.plot(mgs_straight, TcsStraight, label = "Straight AM")
+ax.plot(mgs_straight, TcsStraight, label="St AM")
 # ax.set_ylim(np.amin(resultStraight)*0.99, np.amax(resultStraight)*1.01)
 
-ax.plot(mgsSkewed, TcsSkewed, label = "Skewed AM")
-ax.plot(mzsStraight, TcsFMStraight, label = "Straight FM")
-ax.plot(mzsSkewed, TcsFMSkewed, label = "Skewed FM")
+ax.plot(mgsSkewed, TcsSkewed, label="Sk AM")
+ax.plot(mzsStraight, TcsFMStraight, label="St FM")
+ax.plot(mzsSkewed, TcsFMSkewed, label="Sk FM")
 
-ax.set_xlabel("Altermagnetic strength m")
-ax.set_ylabel(r" $T_c(m)/T_{c, 0}$")
-ax.legend(loc = "best")
+ax.set_xlabel("Magnetic strength")
+ax.set_ylabel(r"$T_c(m)/T_{c, 0}$")
+ax.legend(loc="best", frameon=False)
+ax.set_xlabel("Magnetic strength")
 
 
 plt.tight_layout()
@@ -202,7 +204,6 @@ plt.show()
 # # fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/PAP.pdf", format = "pdf", bbox_inches="tight")
 # plt.show()
 # -- End -----------------------
-
 
 
 # # --  P/AP part --
