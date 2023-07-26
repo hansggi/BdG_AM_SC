@@ -39,7 +39,8 @@ def getms(items, el):
 # NDelta = 10
 # Tcs0 : m = mg, but w = 0
 # Tcs1 : m= 0, w = 0
-items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.0mz=0.0((15, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
+items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.0mz=0.0((16, 20), 30, 1.0, 0.2).npy", allow_pickle=True)
+Tcs, Tc0, Tc1 = Tcs/Tc1, Tc0/Tc1, Tc1/Tc1 
 mgsImps = getms(items, 5)
 TcsAv = np.average(Tcs)
 dTcs = np.std(Tcs)
@@ -75,7 +76,9 @@ ax[0].set_xlabel("$i$")
 ax[0].set_title("m=0")
 
 
-items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.0mz=0.0((15, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
+items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.75mz=0.0((16, 20), 30, 1.0, 0.2).npy", allow_pickle=True)
+Tcs, Tc0, Tc1 = Tcs/Tc1, Tc0/Tc1, Tc1/Tc1 
+
 mgsImps = getms(items, 5)
 TcsAv = np.average(Tcs)
 dTcs = np.std(Tcs)
@@ -90,6 +93,25 @@ ax[1].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
 ax[1].set_xlabel("$i$")
 
 ax[1].set_title("m=0.75")
+
+items, Tcs, Tc0, Tc1 = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps_new/AMm=0.75mz=0.0((16, 20), 30, 1.0, 0.2).npy", allow_pickle=True)
+Tcs, Tc0, Tc1 = Tcs/Tc1, Tc0/Tc1, Tc1/Tc1 
+
+mgsImps = getms(items, 5)
+TcsAv = np.average(Tcs)
+dTcs = np.std(Tcs)
+ic(TcsAv, Tc0, Tc1, dTcs)
+ax[2].plot(np.arange(len(mgsImps)), Tcs, label = "$T_{c,i}$")
+ax[2].axhline(y=TcsAv, label = r"$\langle T_c \rangle_{i}$", color = "orange")
+ax[2].axhline(y=Tc0, label = "$T_{c,0}$", color = "green")
+ax[2].axhline(y=Tc1, label = "$T_{c,0}(m=0)$", color = "purple")
+
+ax[2].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[2].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
+ax[2].set_xlabel("$i$")
+
+ax[2].set_title("m=0.25")
+
 plt.legend(loc = "best", fontsize = "small")
 
 plt.tight_layout()

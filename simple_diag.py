@@ -737,7 +737,7 @@ def run_PAP(alignment, magnettype):
 
 def run_imp_oneval(mg, mz, wAM, NfracAM, magnettype):
     # Run spesific parameters:
-    Nx = 15
+    Nx = 16
     Ny = 20
     NDelta = 30
     print("Set to 30")
@@ -849,7 +849,7 @@ if __name__ == "__main__":
     # run_PAP("AP", "FM")
 
     # run_imp_oneval(0.5, 0., 1.0, 0.4, "AM")
-    run_imp_oneval(0.75, 0., 1.0, 0.2, "AM")
+    run_imp_oneval(0.05, 0., 1.0, 0.2, "AM")
 
     # run_imp_oneval(0., 0.5, 1.0, 0.4, "FM")
     # main()
