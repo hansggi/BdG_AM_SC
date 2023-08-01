@@ -774,7 +774,7 @@ def run_imp_oneval(mg, mz, wAM, NfracAM, magnettype):
     Tc1 = task_imp_oneval(*item1)
 
     ic(tac - tic)
-    np.save(f"Newdata4/imps_new/{magnettype}m={mg}mz={mz}{(Nx, Ny), NDelta, wAM, NfracAM}",
+    np.save(f"Newdata4/imps_new/{magnettype}m={mg:.2f}mz={mz}{(Nx, Ny), NDelta, wAM, NfracAM}",
             np.array([items, Tcs, Tc0, Tc1], dtype=object))
 
     # plt.plot(np.arange(numvals), Tcs)
@@ -849,7 +849,10 @@ if __name__ == "__main__":
     # run_PAP("AP", "FM")
 
     # run_imp_oneval(0.5, 0., 1.0, 0.4, "AM")
-    run_imp_oneval(0.05, 0., 1.0, 0.2, "AM")
+    ms = np.arange(0.99, 1.01, 0.01)
+    print(ms)
+    for m in ms:
+        run_imp_oneval(m, 0., 1.0, 0.2, "AM")
 
     # run_imp_oneval(0., 0.5, 1.0, 0.4, "FM")
     # main()
