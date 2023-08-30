@@ -1,0 +1,144 @@
+
+\documentclass{standalone}
+\usepackage{tikz}
+
+\begin{document}
+
+% \begin{tikzpicture}[scale=0.5, rotate=0]
+%     % define lattice parameters
+%     \def\a{1} 
+%     % \def\halfa{0.5*\a}
+%     \filldraw[blue] ({3.5},{12}) circle (0.4);
+%     \node at (5, 12) {\Large AM};
+
+%     \filldraw[red] ({13.5},{12}) circle (0.4);
+%     \node at (15, 12) {\Large SC};
+
+%     \foreach \i in {1,...,20} {
+%       \foreach \j in {1,...,10} {
+%         \ifnum\i>10 % check if j is greater than 2
+%             \filldraw[red] ({\i*\a},{\a*\j}) circle (0.2);
+%         \else
+%             \filldraw[blue] ({\i*\a},{\a*\j}) circle (0.2);
+%             \fi
+%       }
+%     }
+%     % To include a second AM
+%     % \foreach \i in {21,...,30} {
+%     %   \foreach \j in {1,...,10} {
+%     %     \pgfmathtruncatemacro\parity{mod(\i,2)}
+%     %     \ifnum\parity=1
+%     %         \filldraw[blue] ({\i*\a/2},{\a*\j}) circle (0.2);
+%     %     \else
+%     %         \filldraw[blue] ({\i*\a/2},{\a*\j-0.5*\a}) circle (0.2);
+%     %     \fi
+%     %   }
+%     % }
+%   \end{tikzpicture}
+% ------------------------------------------------------
+
+
+% \begin{tikzpicture}[scale=0.5]
+%      % Draw coordinate axes
+%   \draw[->] (-0.1, 0) -- (2, 0) node[right] {$x$};
+%   \draw[->] (0, -0.1) -- (0, 2) node[above] {$y$};
+% \end{tikzpicture}
+
+  \begin{tikzpicture}[scale=0.5, rotate=135]
+    % define lattice parameters
+    \def\a{sqrt(2)} 
+    \def\halfa{0.5*\a}
+%      % Draw coordinate axes
+  % \draw[->] (-0.1, 0) -- (2, 0) node[right] {$x$};
+  % \draw[->] (0, -0.1) -- (0, 2) node[above] {$y$};
+
+    % draw lattice points
+    \foreach \i in {1,...,20} {
+      \foreach \j in {1,...,5} {
+        \pgfmathtruncatemacro\parity{mod(\i,2)}
+        \ifnum\parity=1
+            \ifnum\i>10 % check if j is greater than 2
+                \filldraw[blue] ({\i*\a/2},{\a*\j}) circle (0.3);
+            \else
+                \filldraw[red] ({\i*\a/2},{\a*\j}) circle (0.3);
+                \fi
+        \else
+          \ifnum\i>10 % check if j is greater than 2
+            \filldraw[blue] ({\i*\a/2},{\a*\j-0.5*\a}) circle (0.3);
+          \else
+            \filldraw[red] ({\i*\a/2},{\a*\j-0.5*\a}) circle (0.3);
+          \fi
+        \fi
+      }
+    }
+    % \foreach \i in {21,...,30} {
+    %   \foreach \j in {1,...,10} {
+    %     \pgfmathtruncatemacro\parity{mod(\i,2)}
+    %     \ifnum\parity=1
+    %         \filldraw[blue] ({\i*\a/2},{\a*\j}) circle (0.2);
+    %     \else
+    %         \filldraw[blue] ({\i*\a/2},{\a*\j-0.5*\a}) circle (0.2);
+    %     \fi
+    %   }
+    % }
+  \end{tikzpicture}
+%------------------------------------------------
+
+
+% -- Make the d-wave structure 1 --
+% \begin{tikzpicture}
+%          % Draw coordinate axes
+%     \draw[->] (-4.1, 0+ 6.5) -- (0, 6.5) node[right] {$x$};
+%     \draw[->] (-4, -0.1+6.5) -- (-4, 4 + 6.5) node[above] {$y$};
+%     % Draw the d-wave
+%     \def\h{1.5}
+%     \def\w{0.8}
+%     \draw (-4, 5) ellipse (\w cm and \h cm);  % Draw labels
+%     \draw (-4, 8) ellipse (\w cm and \h cm); 
+%     \draw (-2.5, 6.5) ellipse (\h cm and \w cm);
+%     \draw (-5.5, 6.5) ellipse (\h cm and \w cm);
+
+%     \node[draw=red, fill=red, line width=0.5pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at  (-5.5, 6.5) {};
+%     \node[draw=red, fill=red, line width=0.5pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at  (-2.5, 6.5) {};
+
+%     \node[draw=blue, fill=blue, line width=0.5pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at (-4, 8) {};
+%     \node[draw=blue, fill=blue, line width=0.5pt, minimum width=0.075cm, minimum height=0.75cm] (vertical) at (-4, 8) {};
+%     (-1.5, 6.5) 
+    
+
+%     \node[draw=blue, fill=blue, line width=1pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at  (-4, 5) {};
+%     \node[draw=blue, fill=blue, line width=0.5pt, minimum width=0.075cm, minimum height=0.75cm] (vertical) at (-4, 5) {};
+
+%     % Draw spin
+%     \draw [->, line width = 3pt] (-2, 0+ 7.5) -- (-2, 1.5+ 7.5) node[right] {Spin up};
+% \end{tikzpicture}
+% ---------------------------------------------
+% -- Make the d-wave structue 2 --
+% \begin{tikzpicture}
+%          % Draw coordinate axes
+%     \draw[->] (-4.1, 0+ 6.5) -- (0, 6.5) node[right] {$x$};
+%     \draw[->] (-4, -0.1+6.5) -- (-4, 4 + 6.5) node[above] {$y$};
+%     % Draw the d-wave
+%     \def\h{1.5}
+%     \def\w{0.8}
+%     \draw (-4, 5) ellipse (\w cm and \h cm);  % Draw labels
+%     \draw (-4, 8) ellipse (\w cm and \h cm); 
+%     \draw (-2.5, 6.5) ellipse (\h cm and \w cm);
+%     \draw (-5.5, 6.5) ellipse (\h cm and \w cm);
+
+%     \node[draw=red, fill=red, line width=0.5pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at  (-4, 8) {};
+    
+%     \node[draw=red, fill=red, line width=0.5pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at  (-4, 5) {};
+
+%     \node[draw=blue, fill=blue, line width=0.5pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at(-5.5, 6.5)  {};
+%     \node[draw=blue, fill=blue, line width=0.5pt, minimum width=0.075cm, minimum height=0.75cm] (vertical) at (-5.5, 6.5) {};
+%     (-1.5, 6.5) 
+    
+
+%     \node[draw=blue, fill=blue, line width=1pt, minimum width=0.75cm, minimum height=0.075cm] (horizontal) at  (-2.5, 6.5) {};
+%     \node[draw=blue, fill=blue, line width=0.5pt, minimum width=0.075cm, minimum height=0.75cm] (vertical) at (-2.5, 6.5) {};
+
+%     % Draw spin
+%     \draw [->, line width = 3pt] (-2, 9 ) -- (-2, 7.5) node[right] {Spin down};
+% \end{tikzpicture}
+\end{document}

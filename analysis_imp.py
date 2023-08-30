@@ -126,7 +126,8 @@ def extract_impval(mg):
     dTcs = np.std(Tcs)
     return Tcs, Tc0, TcsAv, dTcs
 
-def plot_imps(mgs):
+
+def plot_imps_scaled_by_noimp(mgs):
     Tcs = np.zeros((len(mgs), 100))
     Tcs_without_imp = np.zeros_like(mgs)
     Tcs_upper = np.zeros_like(mgs)
@@ -135,113 +136,144 @@ def plot_imps(mgs):
 
     dTs = np.zeros_like(mgs)
     for i, mg in enumerate(mgs):
-        ic(i, mg)
-        ic(extract_impval(mg))
+        # ic(i, mg)
+        # ic(extract_impval(mg))
+        Tcs[i], Tcs_without_imp[i], Tcs_av[i] , dT = extract_impval(mg)
+        # Tcs_av[i] = np.average(Tcs[i])
+        Tcs_upper[i] = Tcs_av[i] + dT
+        Tcs_lower[i] = Tcs_av[i] - dT
+        dTs[i] = dT
+    plt.style.use('seaborn-v0_8-dark-palette')
+
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": "Times",
+        'font.size'   : 16
+    })
+    fig, ax = plt.subplots()
+
+    ax.plot(mgs, Tcs_av / Tcs_without_imp[0], "-x",markersize = 4, label = "Impurity average")
+    # ic(dTs)
+    # plt.errorbar(mgs, Tcs_av/ Tcs_av[0], dTs, label = "Impurity average")
+    # ax.scatter(mgs, Tcs_av, label = "Imp av", marker ="x")
+
+    ax.plot(mgs, Tcs_without_imp/Tcs_without_imp[0], "-x" , markersize = 4,  label = "Clean system")
+    # ax.scatter(mgs, Tcs_without_imp,, marker ="x")
+
+    plt.legend(loc = "upper left", fontsize = "small", frameon = False )
+    ax.set_xlim(0, 1.01)
+    ax.set_ylim(0.91, 1.15)
+    ax.set_ylabel(r"$T_c(m)/T_{c, 0}(m=0)$")
+    ax.set_xlabel(r"Altermagnetic strength $m$")
+    plt.tight_layout()
+    # plt.savefig(f"C:/Users/hansggi/OneDrive - NTNU/BdG/figs/imp_both.pdf", format = "pdf", bbox_inches="tight")
+    # plt.show()
+
+def plot_imps_norm_to_one(mgs):
+    Tcs = np.zeros((len(mgs), 100))
+    Tcs_without_imp = np.zeros_like(mgs)
+    Tcs_upper = np.zeros_like(mgs)
+    Tcs_lower = np.zeros_like(mgs)
+    Tcs_av = np.zeros_like(mgs)
+
+    dTs = np.zeros_like(mgs)
+    for i, mg in enumerate(mgs):
+        # ic(i, mg)
+        # ic(extract_impval(mg))
         Tcs[i], Tcs_without_imp[i], Tcs_av[i] , dT = extract_impval(mg)
         # Tcs_av[i] = np.average(Tcs[i])
         Tcs_upper[i] = Tcs_av[i] + dT
         Tcs_lower[i] = Tcs_av[i] - dT
         dTs[i] = dT
 
+    plt.style.use('ggplot')
+
     plt.rcParams.update({
         "text.usetex": True,
         "font.family": "Times",
-        'font.size'   : 28
+        'font.size'   : 18
     })
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize = (6, 4))
 
-    ax.plot(mgs, Tcs_av / Tcs_av[0], "-", label = "Impurity average")
-    ic(dTs)
+    ax.plot(mgs, Tcs_av / Tcs_av[0], "-x", markersize = 4, label = "Impurity average")
+    # ic(dTs)
     # plt.errorbar(mgs, Tcs_av/ Tcs_av[0], dTs, label = "Impurity average")
     # ax.scatter(mgs, Tcs_av, label = "Imp av", marker ="x")
 
-    ax.plot(mgs, Tcs_without_imp/Tcs_without_imp[0], "--" ,  label = "Clean system")
+    ax.plot(mgs, Tcs_without_imp/Tcs_without_imp[0], "-x" , markersize = 4,  label = "Clean system")
     # ax.scatter(mgs, Tcs_without_imp,, marker ="x")
 
-    plt.legend(loc = "upper left", fontsize = "small")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0.9, 1.15)
+    plt.legend(loc = "upper left", fontsize = "small", frameon=False)
+    ax.set_xlim(0, 1.01)
+    ax.set_ylim(0.91, 1.15)
+    ax.set_ylabel(r"$T_c(m)/T_{c}(m=0)$")
+    ax.set_xlabel(r"Altermagnetic strength $m$")
+    plt.tight_layout
+    # plt.show()
+
+
+def plot_imps_both(mgs):
+    Tcs = np.zeros((len(mgs), 100))
+    Tcs_without_imp = np.zeros_like(mgs)
+    Tcs_upper = np.zeros_like(mgs)
+    Tcs_lower = np.zeros_like(mgs)
+    Tcs_av = np.zeros_like(mgs)
+
+    dTs = np.zeros_like(mgs)
+    for i, mg in enumerate(mgs):
+        # ic(i, mg)
+        # ic(extract_impval(mg))
+        Tcs[i], Tcs_without_imp[i], Tcs_av[i] , dT = extract_impval(mg)
+        # Tcs_av[i] = np.average(Tcs[i])
+        Tcs_upper[i] = Tcs_av[i] + dT
+        Tcs_lower[i] = Tcs_av[i] - dT
+        dTs[i] = dT
+
+    plt.style.use('bmh')
+
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": "Times",
+        'font.size'   : 20
+    })
+    fig, ax = plt.subplots(1,2, figsize = (14, 6), sharey=True)
+
+    ax[0].plot(mgs, Tcs_av / Tcs_av[0], "-x", markersize = 4, label = "Impurity average")
+    # plt.errorbar(mgs, Tcs_av/ Tcs_av[0], dTs, label = "Impurity average")
+    # ax.scatter(mgs, Tcs_av, label = "Imp av", marker ="x")
+
+    ax[0].plot(mgs, Tcs_without_imp/Tcs_without_imp[0], "-x" , markersize = 4,  label = "Clean system")
+    # ax.scatter(mgs, Tcs_without_imp,, marker ="x")
+
+    ax[0].set_xlim(0, 1.01)
+    ax[0].set_ylim(0.91, 1.15)
+    ax[0].set_ylabel(r"$T_c(m)/T_{c}(m=0)$")
+    ax[0].set_xlabel(r"$m/t$")
+
+    ax[1].plot(mgs, Tcs_av / Tcs_without_imp[0], "-x",markersize = 4)#, label = "Impurity average")
+    # ic(dTs)
+    # plt.errorbar(mgs, Tcs_av/ Tcs_av[0], dTs, label = "Impurity average")
+    # ax.scatter(mgs, Tcs_av, label = "Imp av", marker ="x")
+
+    ax[1].plot(mgs, Tcs_without_imp/Tcs_without_imp[0], "-x" , markersize = 4)#,  label = "Clean system")
+    # ax.scatter(mgs, Tcs_without_imp,, marker ="x")
+    # plt.legend(loc = "upper left", fontsize = "small", frameon = False )
+    ax[1].set_xlim(0, 1.01)
+    ax[1].set_ylim(0.91, 1.15)
+    ax[1].set_ylabel(r"$T_c(m)/T_{c, 0}(m=0)$")
+    ax[1].set_xlabel(r"$m/ t$")
+
+    fig.legend(loc = (0.1, 0.75), fontsize = "large", frameon=False)
+
     plt.tight_layout()
+    plt.savefig(f"C:/Users/hansggi/OneDrive - NTNU/BdG/figs/imp_both.pdf", format = "pdf", bbox_inches="tight")
+
     plt.show()
 
 mgs = np.array([0.0, 0.01, 0.02,0.03, 0.04, 0.05, 0.06, 0.07, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13,0.14, 0.15, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25,0.65,0.66, 0.67, 0.67, 0.68, 0.69, 0.70, 0.71, 0.72,0.73, 0.74, 0.75])
 
-mgs = np.concatenate([np.arange(0, 0.16, 0.01), np.arange(0.2, 0.26, 0.01), np.arange(0.65, 0.76, 0.01)])
-plot_imps(mgs)
-# NDelta = 10
-# itemsssAM, TcsssImps_AM, Tc0AM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/AMm=0.5mz=0((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
-# mgsImps = getms(itemsssAM, 5)
-# # print(mgsImps)
-# TcsAv = np.average(TcsssImps_AM)
-# dTcs = np.std(TcsssImps_AM)
-# ic(dTcs)
-# ic(Tc0AM, TcsAv, TcsAv / Tc0AM)
-# # plt.rcParams.update({
-# #         "text.usetex": True,
-# #         "font.family": "Times",
-# #         'font.size'   : 28
-# #     })
-# fig, ax = plt.subplots()
-
-
-# ax.plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
-# ax.axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-# ax.axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
-# ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-# ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-# ax0[1].plot(np.arange(len(mgsImps)), TcsssImps_AM, label = "$T_{c,i}$")
-# ax0[1].axhline(y=np.average(TcsssImps_AM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-# ax0[1].axhline(y=Tc0AM, label = "$T_{c,0}$", color = "green")
-# ax0[1].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-# ax0[1].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-# ax.set_ylabel("$T_c$")
-# ax.set_xlabel("$i$")
-# plt.legend(loc = "best", fontsize = "small")
-
-# plt.tight_layout()
-# # plt.rcParams.update({
-# #         "text.usetex": True,
-# #         "font.family": "Times",
-# #         'font.size'   : 22
-# #     })
-
-# # plt.show()
-
-# NDelta = 10
-# itemsssFM, TcsssImps_FM, Tc0FM = np.load(f"C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/imps/FMm=0.0mz=0.5((20, 20), 10, 1.0, 0.2).npy", allow_pickle=True)
-# mzsImps = getms(itemsssFM, 3)
-# TcsAv = np.average(TcsssImps_FM)
-# dTcs = np.std(TcsssImps_FM)
-# ic(dTcs)
-# ic(Tc0FM, TcsAv, TcsAv / Tc0FM)
-# # print(mzsImps)
-# fig, ax = plt.subplots()
-
-# ax.plot(np.arange(len(mzsImps)), TcsssImps_FM, label = "$T_{c,i}$")
-# ax.axhline(y=np.average(TcsssImps_FM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-# ax.axhline(y=Tc0FM, label = "$T_{c,0}$", color = "green")
-# ax.axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-# ax.axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-# ax0[2].plot(np.arange(len(mzsImps)), TcsssImps_FM, label = "$T_{c,i}$")
-# ax0[2].axhline(y=np.average(TcsssImps_FM), label = r"$\langle T_c \rangle_{i}$", color = "orange")
-# ax0[2].axhline(y=Tc0FM, label = "$T_{c,0}$", color = "green")
-# ax0[2].axhline(y = TcsAv + dTcs, color = "orange", ls = "dashed", lw = 1.)
-# ax0[2].axhline(y = TcsAv - dTcs, color = "orange", ls = "dashed", lw = 1.)
-
-
-# ax.set_ylabel("$T_c$")
-# ax.set_xlabel("$i$")
-# plt.legend(loc = "best", fontsize = "small")
-
-# plt.tight_layout()
-# # plt.rcParams.update({
-# #         "text.usetex": True,
-# #         "font.family": "Times",
-# #     })
-
-# plt.show()
-
-
+mgs = np.concatenate([np.arange(0, 0.37, 0.01), [0.41, 0.42], np.arange(0.44, 0.62, 0.01), np.arange(0.63, 0.84, 0.01), np.arange(0.85, 1.01, 0.01)])#, np.arange(0.79, 0.82, 0.01), [0.86, 0.91], np.arange(0.93, 0.94, 0.01), [0.96], np.arange(0.99, 1.01, 0.01)])
+# plot_imps_norm_to_one(mgs)
+# plot_imps_scaled_by_noimp(mgs)
+mgs = np.arange(0, 1.02, 0.01)
+plot_imps_both(mgs)

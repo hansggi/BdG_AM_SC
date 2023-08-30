@@ -82,7 +82,7 @@ def does_Delta_increase(Nx, Ny, m_arr, mz_arr, hx_arr, Deltag, T, Ui, mu, imps, 
 #         return True
 
 # @njit(cache = True)
-def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, tol, Ui, mu, T, skewed, alignment, periodic):
+def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, imps, Deltag, tol, Ui, mu, T, skewed, alignment, periodic):
 
     done = False
     Delta_old = Delta_arr.copy()
@@ -97,7 +97,7 @@ def calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, tol, Ui, mu,
 
     while not done:
         H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr,
-                         Delta_old, mu, skewed, periodic)
+                         Delta_old, mu, imps, skewed, periodic)
 
         D, gamma = np.linalg.eigh(H)
         # D, gamma = eigh(H)
@@ -308,7 +308,7 @@ def make_system_one_material(U, mz, hx, m, Deltag, Nx, Ny, w, Nfrac):
     mz_arr = (np.ones((Ny*Nx))*mz).reshape(Ny, Nx)
     hx_arr = (np.ones((Nx*Ny)) * hx).reshape(Ny, Nx)
 
-    ic("Running for one material, not a heterostructure. Vals:")
+    # ic("Running for one material, not a heterostructure. Vals:")
 
     imps = np.zeros((Ny, Nx))
     imps = make_impurities(imps, w, Nfrac)
@@ -398,6 +398,32 @@ def task_onematerial(Nx, Ny, NDelta, mz, hx, mg):
                           Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
 
     return Tc
+
+def task_onematerial_Delta(Nx, Ny, tol, mz, hx, mg, T):
+    # Constants
+    U = 1.7
+    mu = -0.5
+    Deltag = 1e-4 + 0.j
+    Tc0 = 0.2
+
+    # Problem spesific constants
+    # x-direction, y-direction. Should only have x.dir for the one material thing.
+    periodic = np.array([True, True])
+    bd = np.array([Nx, Nx])
+    w = 0
+    Nfrac = 0
+    skewed = False
+    alignment = None
+
+    # Make Hamiltonian parameters
+    Ui, mz_arr, hx_arr, m_arr, Delta_arr, imps = make_system_one_material(
+        U, mz, hx, mg, Deltag, Nx, Ny, w, Nfrac)
+
+    # Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr,
+    #                       Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
+    Delta = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, imps, Deltag, tol, Ui, mu, T, skewed, alignment, periodic)[0]
+    ic(Delta.shape)
+    return np.average(np.real(Delta))
 
 
 def task_straightskewed(Nx, Ny, NDelta, mz, hx, mg, skewed, wAM, NfracAM):
@@ -501,118 +527,25 @@ def task_PAP(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM):
     return Tc
 
 
-# def main():
-#     Nx = 30
-#     Ny = 20
-
-#     NDelta = 10
-#     Tc0 = 0.2
-
-#     bd = np.array([10, 20])
-#     # bd_Onemat = np.array([Nx, Nx])
-#     # mg = 0.0
-#     # hx = 0.1
-#     # Make sure to set magnetism to zero if not already defined.
-#     # mg = 0.02
-#     # mg = 0.0
-#     # make_impurities(Nx, Ny, bd, 0.1, int(Nx*Ny / 10))
-#     try: mz
-#     except NameError: mz = 0
-#     try: mg
-#     except NameError: mg = 0
-#     try: hx
-#     except NameError: hx = 0
-#     # mg = 0.
-#     # bd = np.array([Nx//3,  (2 *Nx)//3 ])
-#     # bd = np.array([10, Nx - 10])
-#     U = 1.7
-#     mu = -0.5
-#     Deltag = 1e-5 + 0.j
-#     # tol = 1e-10
-#     alignment = "AP"
-#     ic(alignment)
-#     skewed = False
-#     periodic = np.array([False, True]) # x-direction, y-direction. Should only have x.dir for the one material thing.
-#     ic(bd)
-
-#     NfracAM = 0.2*0 # Fraction of lattice sites that will get impurities in AM
-#     NfracSC = 0.0 # Fraction of lattice sites that will get impurities in SC
-#     w_AM = 1.0*0
-#     w_SC = 0.0
-#     # A = np.zeros((10, 20))
-#     # make_impurities(A, w_AM, NfracAM)
-
-#     impdata = [w_AM, w_SC, NfracAM, NfracSC]
-
-
-#     # Tc = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
-#     # try: Tc
-#     # except: Tc = 0
-#     # ic(Tc)
-#     # T = Tc
-#     # Tc = None
-#     # T = 0
-#     # Delta, gamma, D = calc_Delta_sc(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, tol, Ui, mu, T, skewed, alignment, periodic)
-#     # ic(np.average(np.abs(Delta)))
-
-#     # try: Delta
-#     # except: Delta = 1
-#     # plot_observables_constantT(Delta, gamma, D, T, Nx, Ny, NDelta, mz, bd, U, mu, Deltag, tol, alignment, skewed)
-#     tic = time.time()
-#     # def f(x): return x*x
-#     # mgs = np.linspace(0, .1, 20)
-#     # mgs = np.linspace(0.0, 0.05, 40)
-#     # mzs = np.arange(0., 0.2 + 0.001, 0.001)
-#     # mzs = np.arange(0., 0.2 + 0.02, 0.01)
-#     # mgs =  np.arange(0.0, 1.0 + 0.01, 0.01)
-#     mgs =  np.arange(0.0, 1.0 + 0.01, 0.01)
-
-#     Tcs = np.zeros_like(mgs)
-#     tic =  time.time()
-#     Deltas = np.zeros_like(mgs)
-#     ic( mz, hx, alignment, skewed, Nx, Ny, bd, U, mu, impdata)
-
-#     for i, mg in enumerate(mgs):
-#             ic(mg)
-
-#             Ui, mz_arr, hx_arr,  m_arr, Delta_arr, imps = make_system_normal(bd, U, mz, hx, mg, impdata, Deltag, Nx, Ny, alignment)
-
-#             Tcs[i] = calc_Tc_binomial(Nx, Ny, m_arr, mz_arr, hx_arr, Delta_arr, Deltag, Ui, imps, mu, Tc0, bd, NDelta, skewed, alignment, periodic)
-
-
-#     np.save(f"NewData2/mg_al{alignment}sw{skewed}_ND={NDelta}Ny={Ny}Nx={Nx}mu={mu}bd{bd}.npy",  np.array([mgs, NDelta, Ny, Deltas, Tcs], dtype=object))
-#     # np.save(f"IMPDATA/mg_al{alignment}sw{skewed}_ND={NDelta}Ny={Ny}Nx={Nx}mu={mu}deltag={deltag}.npy",  np.array([mgs, NDelta, Ny, Deltas, Tcs], dtype=object))
-#     # Tcs_noimp = np.load("Noimp.npy")
-#     # np.save("NoImp", Tcs)
-#     tac = time.time()
-#     ic(tac-tic)
-#     plt.plot(mgs, Tcs, label = "Tc")
-
-#     plt.legend()
-#     plt.title(f"m={0.0}")
-#     plt.show()
-
-
 def run_onemat(magnettype):
     # Prepare for multiprocessing in the Onemat case
 
     # Run spesific parameters:
-    Nx = 5
+    Nx = 20
     Ny = 20
-    NDelta = 100
+    NDelta = 5
     mz = 0
     hx = 0
     items = []
-    numsteps = 1
-
+    numsteps = 30
     tic = time.time()
     if magnettype == "AM":
-        mgs = np.linspace(0, 0, numsteps)
+        mgs = np.linspace(0, 0.3, numsteps)
         mz = 0
         for mg in mgs:
             items.append((Nx, Ny, NDelta, mz, hx, mg))
     elif magnettype == "FM":
-        mzs = np.linspace(0, 1.0, numsteps)
+        mzs = np.linspace(0, 0.3, numsteps)
         mg = 0
         for mz in mzs:
             items.append((Nx, Ny, NDelta, mz, hx, mg))
@@ -621,17 +554,67 @@ def run_onemat(magnettype):
 
     print(items)
 
-    with Pool() as pool:
-        Tcs = pool.starmap(task_onematerial, items)
+    Tcs = np.zeros(numsteps)
+    # print(np.array(items).shape[1])
+    for i in tqdm(range(numsteps)):
+        Tcs[i] = task_onematerial(*items[i])
 
     tac = time.time()
     print(tac - tic)
-    # np.save(f"Newdata4/onemat/{magnettype}{(Nx, Ny, NDelta, mz, hx, mg)}", np.array([items, Tcs], dtype = object))
-    print(Tcs)
-    plt.plot(mgs, Tcs)
-    plt.show()
+    if magnettype =="AM":
+        np.save(f"Newdata4/onemat/{magnettype}{(Nx, Ny, NDelta, mz, hx, mg)}", np.array([items, Tcs, mgs], dtype = object))
+    else:
+        np.save(f"Newdata4/onemat/{magnettype}{(Nx, Ny, NDelta, mz, hx, mg)}", np.array([items, Tcs, mzs], dtype = object))
+
+    # print(Tcs)
+    # plt.plot(mgs, Tcs)
+    # plt.show()
     return Tcs
 
+def run_onemat_Delta(magnettype, tol, T):
+    # Prepare for multiprocessing in the Onemat case
+
+    # Run spesific parameters:
+    Nx = 20
+    Ny = 20
+    # NDelta = 5
+    mz = 0
+    hx = 0
+    items = []
+    numsteps = 100
+    tic = time.time()
+    if magnettype == "AM":
+        mgs = np.linspace(0, 0.3, numsteps)
+        mz = 0
+        for mg in mgs:
+            items.append((Nx, Ny, tol, mz, hx, mg, T))
+    elif magnettype == "FM":
+        mzs = np.linspace(0, 0.3, numsteps)
+        mg = 0
+        for mz in mzs:
+            items.append((Nx, Ny, tol, mz, hx, mg, T))
+    else:
+        raise NameError
+
+    print(items)
+
+    Deltas = np.zeros(numsteps)
+    # print(np.array(items).shape[1])
+    for i in tqdm(range(numsteps)):
+        ic(task_onematerial_Delta(*items[i]).shape)
+        Deltas[i] = np.average(task_onematerial_Delta(*items[i]))
+
+    tac = time.time()
+    print(tac - tic)
+    if magnettype =="AM":
+        np.save(f"Newdata4/onemat_Delta/{magnettype}{(Nx, Ny, tol, mz, hx, mg, T)}", np.array([items, Deltas, mgs], dtype = object))
+    else:
+        np.save(f"Newdata4/onemat_Delta/{magnettype}{(Nx, Ny, tol, mz, hx, mg, T)}", np.array([items, Deltas, mzs], dtype = object))
+
+    # print(Tcs)
+    # plt.plot(mgs, Tcs)
+    # plt.show()
+    return Deltas
 
 def run_straightskewed(skewed, magnettype):
     print(
@@ -682,9 +665,9 @@ def run_straightskewed(skewed, magnettype):
 
 def run_PAP(alignment, magnettype):
     # Prepare for multiprocessing in the straight/skewed case
-    numsteps = 1
+    numsteps = 100
     # Run spesific parameters:
-    Nx = 31
+    Nx = 32
     Ny = 20
     bd = [10, Nx - 10]
     NDelta = 30
@@ -696,7 +679,7 @@ def run_PAP(alignment, magnettype):
     print(f"Running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (without magnets): {(Nx, Ny, bd, NDelta,  hx,  alignment, wAM, NfracAM)}")
 
     if magnettype == "AM":
-        mgs = np.linspace(0.225, 1.0, numsteps)
+        mgs = np.linspace(0.0, 1.0, numsteps)
         # mgs = np.zeros(4)
         mz = 0
         for i, mg in enumerate(mgs):
@@ -714,22 +697,21 @@ def run_PAP(alignment, magnettype):
 
     print(items)
 
-    # items = np.array(items)
     Tcs = np.zeros(len(items))
-    # print(np.array(items).shape[1])
-    for i in range(numsteps):
+    for i in tqdm(range(numsteps)):
         Tcs[i] = task_PAP(*items[i])
 
-    # for i in range(len(items))
-    # with Pool() as pool:
-    #     Tcs = pool.starmap(task_PAP, items)
 
     tac = time.time()
     print(tac - tic)
     print(f"Finished running run_PAP for a {magnettype} in the {alignment} alignment with boundaries {bd}. Parameters: (including last value of magnetic strength): {(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}")
     print(Tcs)
-    np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}",
-            np.array([items, Tcs], dtype=object))
+    if magnettype =="AM":
+        np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}",
+            np.array([items, Tcs, mgs], dtype=object))
+    else:
+        np.save(f"Newdata4/PAP/{magnettype}{alignment}{(Nx, Ny, bd, NDelta, mz, hx, mg, alignment, wAM, NfracAM)}",
+            np.array([items, Tcs, mzs], dtype=object))
     # plt.plot(mgs, Tcs)
     # plt.show()
     return Tcs
@@ -745,7 +727,7 @@ def run_imp_oneval(mg, mz, wAM, NfracAM, magnettype):
     items = []
     tic = time.time()
     # Prepare for multiprocessing   in the straight/skewed case
-    numvals = 100  # Number of impurity configurations
+    numvals = 1  # Number of impurity configurations
     if magnettype == "AM":
         assert mz == 0
         for i in range(numvals):
@@ -784,56 +766,248 @@ def run_imp_oneval(mg, mz, wAM, NfracAM, magnettype):
     # plt.show()
     return Tcs
 
-"""def run_imp_oneval_pap(mg, mz, wAM, NfracAM, magnettype):
-    # Run spesific parameters:
-    Nx = 32
+
+
+# --- Just AM, without SC part -----------------------------------------------------
+def run_imp_just_AM_mNfracplot( mz, wAM, magnettype, T):
+    Nx = 20
     Ny = 20
-    print("Set to 20 again")
-    NDelta = 30
-    hx = 0
+    mu = -0.5 
+
     items = []
     tic = time.time()
     # Prepare for multiprocessing   in the straight/skewed case
+    numvals_mg = 20
+    numvals_Nfrac = 20
+    NfracMax = 0.6
+    Nfracs = np.linspace(0, NfracMax, numvals_Nfrac)
+    mgs = np.linspace(0, 1., numvals_mg)
     numvals = 100  # Number of impurity configurations
-    if magnettype == "AM":
-        assert mz == 0
-        for i in range(numvals):
-            items.append((Nx, Ny, NDelta, mz, hx, mg, wAM, NfracAM))
-    elif magnettype == "FM":
-        assert mg == 0
-        for i in range(numvals):
-            items.append((Nx, Ny, NDelta, mz, hx, mg,  wAM, NfracAM))
-    else:
-        raise NameError
 
-    print(items)
+    cx_up_imp = np.zeros((numvals_Nfrac, numvals_mg, numvals))
+    cy_up_imp = np.zeros((numvals_Nfrac, numvals_mg, numvals))
+    cx_dn_imp = np.zeros((numvals_Nfrac, numvals_mg, numvals))
+    cy_dn_imp = np.zeros((numvals_Nfrac, numvals_mg, numvals))
 
-    Tcs = np.zeros(numvals)
-    for i in range(numvals):
-        Tcs[i] = task_imp_oneval_pap(*items[i])
+    # for k in range(numvals_Nfrac):
+    #     NfracAM = Nfracs[k]
+    #     ic(wAM, NfracAM)
+    #     for i in range(numvals_mg):
+    #         for j in range(numvals):
+    #             items.append((Nx, Ny, mgs[i], wAM, Nfracs[k], T, mu))
 
-    # with Pool() as pool:
-    #     Tcs = pool.starmap(task_imp_oneval, items)
-    tac = time.time()
-    print(Tcs)
+    # ic(items[0])
+    cx_up_av    = np.zeros((numvals_Nfrac, numvals_mg))
+    cy_up_av    = np.zeros((numvals_Nfrac, numvals_mg))
+    # cx_up_noimp = np.zeros((numvals_Nfrac, numvals_mg))
+    # cy_up_noimp = np.zeros((numvals_Nfrac, numvals_mg))
 
-    item0 = (Nx, Ny, NDelta, mz, hx, mg, 0, 0)
-    item1 = (Nx, Ny, NDelta, 0, 0, 0, 0, 0)
-    Tc0 = task_imp_oneval(*item0)
-    Tc1 = task_imp_oneval(*item1)
+    cx_dn_av    = np.zeros((numvals_Nfrac, numvals_mg))
+    cy_dn_av    = np.zeros((numvals_Nfrac, numvals_mg))
+    # cx_dn_noimp = np.zeros((numvals_Nfrac, numvals_mg))
+    # cy_dn_noimp = np.zeros((numvals_Nfrac, numvals_mg))
 
-    ic(tac - tic)
-    np.save(f"Newdata4/imps/PAP={magnettype}m={mg}mz={mz}{(Nx, Ny), NDelta, wAM, NfracAM}",
-            np.array([items, Tcs, Tc0, Tc1], dtype=object))
+    for k in tqdm(range(numvals_Nfrac)):
+        for i in tqdm(range(numvals_mg)):
+            # cx_up_noimp[k, i], cy_up_noimp[k, i], cx_dn_noimp[k, i], cy_dn_noimp[k, i] = task_just_AM(*(Nx, Ny, mgs[i], 0, 0, T, mu))
+            for j in range(numvals):
+                cx_up_imp[k, i, j], cy_up_imp[k, i, j], cx_dn_imp[k, i, j], cy_dn_imp[k, i, j] = task_just_AM(*(Nx, Ny, mgs[i], wAM, Nfracs[k], T, mu))
 
-    # plt.plot(np.arange(numvals), Tcs)
-    # plt.axhline(y=np.average(Tcs), label = "Average over imps", color = "orange")
-    # plt.axhline(y=Tc0, label = "Without imps", color = "green")
-    # plt.legend()
-    # plt.show()
-    return Tcs
-# import sys
-"""
+            # ic(np.average(cx_up_imp, axis = 1).shape)
+            cx_up_av[k, i] = np.average(cx_up_imp[k, i, :])
+            cy_up_av[k, i] = np.average(cy_up_imp[k, i, :])
+            cx_dn_av[k, i] = np.average(cx_dn_imp[k, i, :])
+            cy_dn_av[k, i] = np.average(cy_dn_imp[k, i, :])
+
+    
+    np.save(f"Newdata4/AM_imps_mN/w={wAM}{(Nx, Ny), numvals_mg, numvals_Nfrac, numvals}",
+                np.array([items,cx_up_av, cy_up_av, cx_dn_av, cy_dn_av, 1, NfracMax ], dtype=object))
+
+
+
+def run_imp_just_AM_wNfracplot(mg, mz, magnettype, T):
+    Nx = 20
+    Ny = 20
+    mu = -0.5
+    items = []  
+    tic = time.time()
+    # Prepare for multiprocessing   in the straight/skewed case
+    numvals_w = 20
+    numvals_Nfrac = 20
+    NfracMax = 0.6
+    Nfracs = np.linspace(0, NfracMax, numvals_Nfrac)
+    wMax = 5
+    ws = np.linspace(0, wMax, numvals_w)
+    numvals = 100  # Number of impurity configurations
+
+    cx_up_imp = np.zeros((numvals_Nfrac, numvals_w, numvals))
+    cy_up_imp = np.zeros((numvals_Nfrac, numvals_w, numvals))
+    cx_dn_imp = np.zeros((numvals_Nfrac, numvals_w, numvals))
+    cy_dn_imp = np.zeros((numvals_Nfrac, numvals_w, numvals))
+
+    # for k in range(numvals_Nfrac):
+    #     # NfracAM = Nfracs[k]
+    #     # ic(wAM, NfracAM)
+    #     for i in range(numvals_w):
+    #         wAM = ws[i]
+    #         for j in range(numvals):
+    #             items.append((Nx, Ny, mg, ws[i], Nfracs[k], T, mu))
+
+
+    # ic(items[0])
+    cx_up_av    = np.zeros((numvals_Nfrac, numvals_w))
+    cy_up_av    = np.zeros((numvals_Nfrac, numvals_w))
+    # cx_up_noimp = np.zeros((numvals_Nfrac, numvals_w))
+    # cy_up_noimp = np.zeros((numvals_Nfrac, numvals_w))
+
+    cx_dn_av    = np.zeros((numvals_Nfrac, numvals_w))
+    cy_dn_av    = np.zeros((numvals_Nfrac, numvals_w))
+    # cx_dn_noimp = np.zeros((numvals_Nfrac, numvals_w))
+    # cy_dn_noimp = np.zeros((numvals_Nfrac, numvals_w))
+
+    for k in tqdm(range(numvals_Nfrac)):
+        for i in range(numvals_w):
+            # cx_up_noimp[k, i], cy_up_noimp[k, i], cx_dn_noimp[k, i], cy_dn_noimp[k, i] = task_just_AM(*(Nx, Ny, mg, 0, 0, T, mu))
+            for j in range(numvals):
+                cx_up_imp[k, i, j], cy_up_imp[k, i, j], cx_dn_imp[k, i, j], cy_dn_imp[k, i, j] = task_just_AM(*(Nx, Ny, mg, ws[i], Nfracs[k], T, mu))
+
+            # ic(np.average(cx_up_imp, axis = 1).shape)
+            cx_up_av[k, i] = np.average(cx_up_imp[k, i, :])
+            cy_up_av[k, i] = np.average(cy_up_imp[k, i, :])
+            cx_dn_av[k, i] = np.average(cx_dn_imp[k, i, :])
+            cy_dn_av[k, i] = np.average(cy_dn_imp[k, i, :])
+
+    
+    # ic(cx_up_noimp[10], cy_up_noimp[10])
+
+    np.save(f"Newdata4/AM_imps_wN/m={mg}{(Nx, Ny), numvals_w,numvals_Nfrac, numvals}",
+            np.array([items,cx_up_av, cy_up_av, cx_dn_av, cy_dn_av, wMax, NfracMax ], dtype=object))
+
+
+def run_imp_just_AM_mmufracplot(mz, magnettype, T):
+    Nx = 20
+    Ny = 20
+    wAM = 0
+    Nfrac = 0
+
+    items = []
+    tic = time.time()
+    # Prepare for multiprocessing   in the straight/skewed case
+    numvals_mg = 100
+    numvals_mu = 100
+    muMin = -3
+    muMax = -0.5
+    mus = np.linspace(muMin, muMax, numvals_mu)
+    mgs = np.linspace(0, 1., numvals_mg)
+    numvals = 1  # Number of impurity configurations
+
+    cx_up_imp = np.zeros((numvals_mu, numvals_mg, numvals))
+    cy_up_imp = np.zeros((numvals_mu, numvals_mg, numvals))
+    cx_dn_imp = np.zeros((numvals_mu, numvals_mg, numvals))
+    cy_dn_imp = np.zeros((numvals_mu, numvals_mg, numvals))
+
+    for k in range(numvals_mu):
+        # NfracAM = mus[k]
+        for i in range(numvals_mg):
+            for j in range(numvals):
+                items.append((Nx, Ny, mgs[i], wAM, mus[k], T))
+
+
+    cx_up_av    = np.zeros((numvals_mu, numvals_mg))
+    cy_up_av    = np.zeros((numvals_mu, numvals_mg))
+    # cx_up_noimp = np.zeros((numvals_mu, numvals_mg))
+    # cy_up_noimp = np.zeros((numvals_mu, numvals_mg))
+
+    cx_dn_av    = np.zeros((numvals_mu, numvals_mg))
+    cy_dn_av    = np.zeros((numvals_mu, numvals_mg))
+    # cx_dn_noimp = np.zeros((numvals_mu, numvals_mg))
+    # cy_dn_noimp = np.zeros((numvals_mu, numvals_mg))
+
+    for k in tqdm(range(numvals_mu)):
+        for i in tqdm(range(numvals_mg)):
+            # cx_up_noimp[k, i], cy_up_noimp[k, i], cx_dn_noimp[k, i], cy_dn_noimp[k, i] = task_just_AM(*(Nx, Ny, mgs[i], 0, 0, T, mus[k]))
+            for j in range(numvals):
+                cx_up_imp[k, i, j], cy_up_imp[k, i, j], cx_dn_imp[k, i, j], cy_dn_imp[k, i, j] = task_just_AM(*(Nx, Ny, mgs[i], wAM, Nfrac, T, mus[k]))
+
+            # ic(np.average(cx_up_imp, axis = 1).shape)
+            cx_up_av[k, i] = np.average(cx_up_imp[k, i, :])
+            cy_up_av[k, i] = np.average(cy_up_imp[k, i, :])
+            cx_dn_av[k, i] = np.average(cx_dn_imp[k, i, :])
+            cy_dn_av[k, i] = np.average(cy_dn_imp[k, i, :])
+
+
+    np.save(f"Newdata4/AM_imps_mmu/{(Nx, Ny), numvals_mg, numvals_mu, numvals}",
+            np.array([items,cx_up_av, cy_up_av, cx_dn_av, cy_dn_av, 1, muMin, muMax ], dtype=object))
+
+
+
+def task_just_AM(Nx, Ny, mg, wAM, NfracAM, T, mu):
+    # Constants
+    U = 1.7
+    # mu = -0.5
+    # ic(mg, mz)
+
+    # Problem spesific constants
+    # x-direction, y-direction. Should only have x.dir for the one material thing.
+    periodic = np.array([False, False])
+    # NfracSC = 0.0  # Fraction of lattice sites that will get impurities in SC
+    # w_SC = 0.0
+    # impdata = [wAM, w_SC, NfracAM, NfracSC]
+    skewed = False
+
+    # Make Hamiltonian parameters
+    mz, hx = 0, 0
+    Ui, mz_arr, hx_arr, m_arr, Delta_arr, imps = make_system_one_material(U, mz, hx, mg, 0, Nx, Ny, wAM, NfracAM)
+
+    H = make_H_numba(Nx, Ny, m_arr, mz_arr, hx_arr,
+                         Delta_arr, mu, imps, skewed, periodic)
+    
+
+    D, gamma = np.linalg.eigh(H)
+    D, gamma = D[2*Nx * Ny:], gamma[:, 2*Nx * Ny:]
+    cx_up, cy_up, cx_dn, cy_dn = calc_corr(D, gamma, T, Nx, Ny)
+    return np.average(np.abs(cx_up)), np.average(np.abs(cy_up)), np.average(np.abs(cx_dn)), np.average(np.abs(cy_dn))
+
+def calc_corr(D, gamma, T, Nx, Ny):
+    # NB: gamma and energies D must already be just positive eigenvalues
+    u_up = gamma[0::4, :]
+    u_dn = gamma[1::4, :]
+    v_up = gamma[2::4, :]
+    v_dn = gamma[3::4, :]
+
+    f = (1 - np.tanh(D / (2 * T))) / 2
+
+
+    u_up_px =  np.roll(u_up, -1, axis = 0)
+    v_up_px =  np.roll(v_up, -1, axis = 0)
+
+    u_up_py =  np.roll(u_up, -Nx, axis = 0)
+    v_up_py =  np.roll(v_up, -Nx, axis = 0)
+    
+
+    u_dn_px =  np.roll(u_dn, -1, axis = 0)
+    v_dn_px =  np.roll(v_dn, -1, axis = 0)
+
+    u_dn_py =  np.roll(u_dn, -Nx, axis = 0)
+    v_dn_py =  np.roll(v_dn, -Nx, axis = 0)
+
+    cx_up = np.sum(np.conjugate(u_up) * u_up_px * f +
+                        v_up * np.conjugate(v_up_px) * (1 - f), axis=1).reshape((Ny, Nx))
+    
+    cy_up = np.sum(np.conjugate(u_up) * u_up_py * f +
+                        v_up * np.conjugate(v_up_py) * (1 - f), axis=1).reshape((Ny, Nx))
+    
+    cx_dn = np.sum(np.conjugate(u_dn) * u_dn_px * f +
+                        v_dn * np.conjugate(v_dn_px) * (1 - f), axis=1).reshape((Ny, Nx))
+    
+    cy_dn = np.sum(np.conjugate(u_dn) * u_dn_py * f +
+                        v_dn * np.conjugate(v_dn_py) * (1 - f), axis=1).reshape((Ny, Nx))
+    
+    return cx_up, cy_up, cx_dn, cy_dn
+
+# --- end just AM ------------------------------------------------------------
+
+
 
 if __name__ == "__main__":
     # run_onemat()
@@ -845,14 +1019,33 @@ if __name__ == "__main__":
 
     # run_PAP("P", "AM")
     # run_PAP("AP", "AM")
-    # run_PAP("P", "FM")
-    # run_PAP("AP", "FM")
+    run_PAP("P", "FM")
+    run_PAP("AP", "FM")
 
     # run_imp_oneval(0.5, 0., 1.0, 0.4, "AM")
-    ms = np.arange(0.99, 1.01, 0.01)
+
+    """ms = np.arange(0.42, 0.45, 0.01)
     print(ms)
     for m in ms:
         run_imp_oneval(m, 0., 1.0, 0.2, "AM")
-
+    """
+    
     # run_imp_oneval(0., 0.5, 1.0, 0.4, "FM")
     # main()
+
+    # run_imp_just_AM_mNfracplot(0, 1.0, "AM", 0.001)
+
+    # run_imp_just_AM_mNfracplot(0, 3.0, "AM", 0.001)
+
+
+    # run_imp_just_AM_wNfracplot(0.75, 0, "AM", 0.001)
+
+    # run_imp_just_AM_wNfracplot(0.25, 0, "AM", 0.001)
+
+    # run_imp_just_AM_mmufracplot(0, "AM", 0.001)
+
+    # run_onemat("AM")
+    # run_onemat("FM")
+
+    # run_onemat_Delta("AM", 1e-8, 0.01)
+    # run_onemat_Delta("FM", 1e-8, 0.01)

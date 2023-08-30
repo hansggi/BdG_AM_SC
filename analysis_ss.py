@@ -86,6 +86,13 @@ from icecream import ic
 
 
 # -- Junction geometry part --
+plt.style.use('bmh')
+
+plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": "Times",
+        'font.size'   : 20
+    })
 items, mgs_straight,  TcsStraight = np.load(
     "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_15/ShorterAMFalse(15, 20, 30, 0, 0, 1.0, False, 0, 0).npy", allow_pickle=True)
 
@@ -121,16 +128,21 @@ ax.plot(mgsSkewed, TcsSkewed, label="Sk AM")
 ax.plot(mzsStraight, TcsFMStraight, label="St FM")
 ax.plot(mzsSkewed, TcsFMSkewed, label="Sk FM")
 
-ax.set_xlabel("Magnetic strength")
-ax.set_ylabel(r" $T_c(m)/T_{c, 0}$")
+ax.set_xlabel("Altermagnetic strength $m$")
+ax.set_ylabel(r"$T_c(m)/T_{c}(m=0)$")
 ax.legend(loc="upper left", frameon=False, ncols=2)
-
 
 plt.tight_layout()
 
 # fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/geometry.pdf", format = "pdf", bbox_inches="tight")
 plt.show()
+plt.style.use('bmh')
 
+plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": "Times",
+        'font.size'   : 20
+    })
 
 items, mgs_straight,  TcsStraight = np.load(
     "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterAMFalse(16, 20, 50, 0, 0, 1.0, False, 0, 0).npy", allow_pickle=True)
@@ -146,10 +158,6 @@ items, mzsSkewed,  TcsFMSkewed = np.load(
     "C:/Users/hansggi/OneDrive - NTNU/BdG/Newdata4/straightskewed_16/ShorterFMTrue(16, 20, 50, 1.0, 0, 0, True, 0, 0).npy", allow_pickle=True)
 
 
-# font = {'size'   : 14}
-
-# mpl.rc('font', **font)
-
 fig, ax = plt.subplots()
 print(TcsFMStraight[0], TcsStraight[0])
 print(TcsFMSkewed[0], TcsSkewed[0])
@@ -161,19 +169,32 @@ TcsFMSkewed /= TcsFMSkewed[0]
 ax.plot(mgs_straight, TcsStraight, label="St AM")
 # ax.set_ylim(np.amin(resultStraight)*0.99, np.amax(resultStraight)*1.01)
 
-ax.plot(mgsSkewed, TcsSkewed, label="Sk AM")
+ax.plot(mgsSkewed, TcsSkewed, label="Sk AM", color = "#348ABD", linestyle = "dashed")
 ax.plot(mzsStraight, TcsFMStraight, label="St FM")
-ax.plot(mzsSkewed, TcsFMSkewed, label="Sk FM")
+ax.plot(mzsSkewed, TcsFMSkewed, label="Sk FM", color = "#A60628", linestyle = "dashed")
 
-ax.set_xlabel("Magnetic strength")
-ax.set_ylabel(r"$T_c(m)/T_{c, 0}$")
+# ax.set_xlabel("Altermagnetic strength $m$")
+ax.set_ylabel(r"$T_c(m)/T_{c}(m=0)$")
 ax.legend(loc="best", frameon=False)
-ax.set_xlabel("Magnetic strength")
-
 
 plt.tight_layout()
 
-# fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figsAMSC/geometry.pdf", format = "pdf", bbox_inches="tight")
+# x-axis label
+from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
+
+xbox1 = TextArea("$m/t$ ", textprops=dict(color="#348ABD", size=22))
+xbox2 = TextArea(", ", textprops=dict(color="k", size=22))
+xbox3 = TextArea("$m_z/t$ ", textprops=dict(color="#A60628", size=22))
+
+xbox = HPacker(children=[xbox1, xbox2, xbox3],
+                  align="center", pad=0, sep=5)
+
+anchored_xbox = AnchoredOffsetbox(loc=3, child=xbox, pad=0., frameon=False,
+                                      bbox_to_anchor=(0.38, -0.19),
+                                      bbox_transform=ax.transAxes, borderpad=0.)
+
+ax.add_artist(anchored_xbox)
+fig.savefig("C:/Users/hansggi/OneDrive - NTNU/BdG/figs/ss16.pdf", format = "pdf", bbox_inches="tight")
 plt.show()
 # -- End --------------------------
 

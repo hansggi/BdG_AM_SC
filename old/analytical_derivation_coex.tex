@@ -1,0 +1,545 @@
+\pdfoutput=1
+
+%-------------------------------------------------------------------------------%
+%                         DOCUMENT CLASS AND PACKAGES                           %
+%-------------------------------------------------------------------------------%
+
+% Document class
+\documentclass[aps,onecolumn,amsmath,amssymb,preprintnumbers,floatfix,prl,superscriptaddress,longbibliography]{revtex4-2}%{revtex4}%
+
+% Font and encoding
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext}
+\usepackage[upint]{newtxmath}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage{eucal}
+\usepackage{bm}
+\usepackage{siunitx}
+\usepackage{comment}
+\usepackage{lipsum}
+
+
+% Notation
+\usepackage{enumerate}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{color}
+\usepackage{soul}
+
+% Figures
+\usepackage{graphicx}
+
+% References
+\usepackage[colorlinks,allcolors=blue]{hyperref}
+\usepackage[capitalize]{cleveref}
+\newcommand{\crefrangeconjunction}{--}
+
+
+
+%-------------------------------------------------------------------------------%
+%                                CUSTOM MACROS                                  %
+%-------------------------------------------------------------------------------%
+
+% Ensure consistent notation
+
+\definecolor{DarkRed}{rgb}{0.65,0,0}%
+\definecolor{Green}{rgb}{0,0.3,0.3}
+\definecolor{Purple}{rgb}{0.3,0,0.65}
+\definecolor{Red}{rgb}{1,0,0}
+\definecolor{Blue}{rgb}{0,0,0.85}
+\definecolor{Magenta}{rgb}{1,0,1}
+
+
+
+%% Math
+\newcommand{\Imag}{{\Im\mathrm{m}}}   % Imaginary part 
+\newcommand{\Real}{{\mathrm{Re}}}   % Real part
+\newcommand{\im}{\mathrm{i}}        % Imaginary unit non-italic
+\newcommand{\ve}[1]{\boldsymbol{#1}}
+\DeclareMathOperator{\diag}{diag} % Requires amsopn.sty (included in amsmath)
+\newcommand{\x}{\lambda}  % holder for plus/minus 1 (\pm 1)
+\newcommand{\y}{\rho}     % holder for plus/minus 1 (\pm 1)
+\newcommand{\T}{\mathrm{T}}   % Time ordering operator
+\newcommand{\Pv}{\mathcal{P}} % Principal value operator
+\newcommand{\mf}{m_\text{F}} 
+\newcommand{\ms}{m_\text{S}} 
+\newcommand{\vk}{{\ve{k}}} % Vector k
+\newcommand{\vecA}{\ve{A}} % Vector k
+\newcommand{\hvec}{\ve{h}} % Vector k
+\newcommand{\vech}{\ve{h}} % Vector k
+\newcommand{\vecf}{\ve{f}} % Vector k
+
+
+
+\newcommand{\ow}{odd-$\omega$ } % Vector k
+\newcommand{\ew}{even-$\omega$ } % Vector k
+
+\newcommand{\hatx}{\hat{\boldsymbol{x}}} % Vector k
+\newcommand{\haty}{\hat{\boldsymbol{y}}} % Vector k
+\newcommand{\hatz}{\hat{\boldsymbol{z}}} % Vector k
+
+%\newcommand{\ot}{~\overset{\circ}{ , }~}
+
+\newcommand{\vs}{\vec{\sigma}} % Vector p\newcommand{\vp}{\ve{p}} % Vector p\
+
+\newcommand{\vpf}{\mathbf{\vp}_\text{F}} % Vector pF
+\newcommand{\xx}{\mathcal{X}} 
+\newcommand{\vq}{\ve{q}} % Vector q
+\newcommand{\vg}{\ve{g}} % Vector q
+\newcommand{\ca}[2][]{c_{#2}^{\vphantom{\dagger}#1}} % op. c (annihilate) 
+\newcommand{\cc}[2][]{c_{#2}^{{\dagger}#1}}          % op. c dagger (create) 
+\newcommand{\da}[2][]{d_{#2}^{\vphantom{\dagger}#1}} % op. d (annihilate) 
+\newcommand{\dc}[2][]{d_{#2}^{{\dagger}#1}}          % op. d dagger (create) 
+\newcommand{\ga}[2][]{\gamma_{#2}^{\vphantom{\dagger}#1}} % op. gamma
+\newcommand{\ea}[2][]{\eta_{#2}^{\vphantom{\dagger}#1}} % op. eta
+\newcommand{\ec}[2][]{\eta_{#2}^{{\dagger}#1}}          % op. eta dagger 
+
+\newcommand{\dn}{\downarrow}
+\newcommand{\up}{\uparrow}
+\newcommand{\ph}{\phantom{\dag}}
+
+\newcommand{\Tkp}[1]{T_{\vk\vp#1}}  % Tunneling matrix element
+\newcommand{\muone}{\mu^{(1)}}      % Chem.pot. side one
+\newcommand{\mutwo}{\mu^{(2)}}      % Chem.pot. side two
+\newcommand{\epsk}{\varepsilon_\vk}
+\newcommand{\epsp}{\varepsilon_\vp}
+\newcommand{\e}[1]{\mathrm{e}^{#1}}
+\newcommand{\dif}{\mathrm{d}} %Rett d i differensial
+\newcommand{\diff}[2]{\frac{\dif#1}{\dif#2}}%Derivert
+\newcommand{\mean}[1]{\langle#1\rangle}
+\newcommand{\abs}[1]{|#1|}
+\newcommand{\abss}[1]{|#1|^2}
+\newcommand{\Sk}[1][\vk]{\ve{S}_{#1}}
+\newcommand{\pauli}[1][\alpha\beta]{\boldsymbol{\sigma}_{#1}^{\vphantom{\dagger}}}
+\newcommand{\paulivec}{\mathbf{\hat{\sigma}}}
+\newcommand{\nabtil}{\tilde{\nabla}}
+\newcommand{\xh}{\ve{\hat{x}}}
+\newcommand{\yh}{\ve{\hat{y}}}
+\newcommand{\zh}{\ve{\hat{z}}}
+\newcommand{\vecsigma}{\boldsymbol{\sigma}}
+
+\newcommand{\veci}{{\ve{i}}}
+\newcommand{\vecj}{{\ve{j}}}
+\newcommand{\veck}{\ve{k}}
+\newcommand{\vecn}{\ve{n}}
+\newcommand{\vecd}{\ve{d}}
+\newcommand{\vecx}{\ve{x}}
+\newcommand{\vecy}{\ve{y}}
+
+\newcommand{\vecr}{\ve{r}}
+\newcommand{\vecp}{\ve{p}}
+\newcommand{\vecq}{{\ve{q}}}
+\newcommand{\vece}{\ve{e}}
+\newcommand{\vecg}{\ve{g}}
+\newcommand{\vecm}{\ve{m}}
+
+\newcommand{\vecH}{\ve{H}}
+\newcommand{\vecB}{\ve{B}}
+\newcommand{\vecM}{\ve{M}}
+\newcommand{\vecS}{\ve{S}}
+
+\newcommand{\fd}{f(E_{nk}/2)}
+
+\newcommand{\gc}{\check{g}}
+
+%% Text
+\newcommand{\eq}{Eq.}%No extra space when used with reftex (->auto ~)
+\newcommand{\eqs}{Eqs.}%No extra space when used with reftex (->auto ~)
+\newcommand{\cf}{\textit{cf. }}%adv : that is to say; in other words
+\newcommand{\ie}{\textit{i.e. }}%adv : that is to say; in other words
+\newcommand{\eg}{\textit{e.g. }}%[syn: f.eks., for example, for instance]
+\newcommand{\etal}{\emph{et al.}}
+\def\i{\mathrm{i}}                            
+
+\newcommand{\ppartial}{\bar{\partial}}
+
+\newcommand{\g}{\underline{\gamma}}
+\newcommand{\gt}{\underline{\tilde{\gamma}}}
+\newcommand{\N}{\underline{\mathcal{N}}}
+\newcommand{\Nt}{\underline{\tilde{\mathcal{N}}}}
+
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+
+\newcommand*{\ou}[2]{\overset{\text{\large ${#1}$}}{#2}}
+
+\newcommand\comdot{%
+  \mathrel{{\ooalign{\hss\raisebox{-0.3ex}{$,$}\hss\cr\raisebox{0.3ex}{$\cdot$}}}}
+}
+
+\newcommand\combullet{%
+  \mathrel{{\ooalign{\hss\raisebox{-0.3ex}{$,$}\hss\cr\raisebox{0.3ex}{$\bullet$}}}}
+}
+
+\newcommand\comtimes{%
+  \mathrel{{\ooalign{\hss\raisebox{-0.3ex}{$,$}\hss\cr\raisebox{0.3ex}{$\times$}}}}
+}
+
+\newcommand{\vehsigma}{\hat{\ve{\sigma}}}
+\newcommand{\vesigma}{\ve{\sigma}}
+\newcommand{\vep}{\ve{p}}
+\newcommand{\veq}{\ve{q}}
+\newcommand{\vgf}{\ve{q}_{F}}
+\newcommand{\hrhot}{\hat{\rho}_{3}}
+\newcommand{\hrhoz}{\hat{\rho}_{0}}
+\newcommand{\veR}{\ve{R}}
+\newcommand{\ver}{\ve{r}}
+\newcommand{\hnabla}{\hat{\nabla}}
+
+
+% Other macros
+\newcommand{\prlsection}[1]{\textit{#1}.\kern0.05em---\kern0.05em\ignorespaces}
+
+% For collaborative editing
+\newcommand{\hans}[1]{\textcolor{Magenta}{{#1}}}
+\newcommand{\jacob}[1]{\textcolor{Red}{{#1}}}
+
+
+% 
+%\usepackage{subcaption} % to use subfigures
+% \usepackage{todonotes} % to add to do-notes
+\usepackage{comment}
+% \usepackage{biblatex}
+% \addbibresource{bibliography.bib}
+\renewcommand\vec{\mathbf}
+%-------------------------------------------------------------------------------%
+%                          TITLE PAGE AND ABSTRACT                            %
+%-------------------------------------------------------------------------------%
+
+\begin{document}
+\title{Analytical derivation of coexistence AM/SC}
+
+
+\maketitle
+\hans{COMMENT: Here, I go through the derivation of the gap equation. I include many details, mostly for my own sake. I will condense this if we decide to include the derivation in the article.}
+\section{Model and FT}
+We use
+\begin{equation}
+\label{eq:H}
+		H = E_0
+		- \sum_{i\sigma} \mu_i c^\dag_{i\sigma} c_{i\sigma}
+		- \sum_i (\Delta_i^{\vphantom{*}} c^\dag_{i\downarrow} c^\dag_{i\uparrow} 
+    + \Delta_i^* c_{i\uparrow} c_{i\downarrow}) 
+		- \sum_{\langle i, j \rangle \sigma} t_{ij} c^\dag_{i\sigma} c_{j\sigma}
+		- \sum_{\langle i, j \rangle \sigma\sigma'} (\bm{m}_{ij} \cdot \bm{\sigma})_{\sigma\sigma'} c^\dag_{i\sigma} c_{j\sigma'}
+  - h
+  \sum_{i, \sigma, \sigma'} [\sigma_z]_{\sigma\sigma'} c^\dag_{i\sigma} c_{i\sigma'},
+\end{equation}
+where \hans{check sign of second terms in $E_0:$} $E_0 = \sum_\vec{k} \xi_\vec{k} + \sum_\vec{k} \frac{\Delta ^2}{U} + \frac{|\vec H|}{2 \mu_+}$
+Now, assume bulk material, constant $\mu, \Delta, \vec h_i$
+We start by Fourier transforming, using the convention
+\begin{align}
+    c_{\vec i\sigma} = \frac{1}{\sqrt{NxNy}} \sum_{\vec k } \e{i \vec k \cdot \vec i}&&
+    c^\dag_{\vec i\sigma} = \frac{1}{\sqrt{NxNy}} \sum_{\vec k } \e{-i \vec k \cdot \vec i},
+\end{align}
+which gives
+\begin{align}
+    H
+		  =& E_0
+		- \sum_{\vec k \sigma \sigma}(\mu + 2t \cos(k_x) + 2t \cos(k_y) ) c^\dag_{\vec k \sigma} c_{\vec k\sigma}
+  - h
+    \sum_{\vec k, \sigma, \sigma'} [\sigma_z]_{\sigma\sigma'} c^\dag_{\vec k \sigma} c_{\vec k \sigma'}
+    \\
+	&- \sum_{\vec k} (\Delta  c^\dag_{\vec k \downarrow} c^\dag_{-\vec k\uparrow} 
+    + \Delta^* c_{\vec k\uparrow} c_{-\vec k\downarrow}) 
+    -2m \sum_{k_x, k_y} (\cos(k_x) - \cos(k_y)) 
+    c^\dag_{\vec k\sigma} c_{\vec k\sigma'}
+    \\
+\end{align}
+Introduce Nambu space operators,
+\begin{align}
+    \phi_\vec{k}^\dag = 
+    \begin{pmatrix}
+        c^\dag_{\vec k \uparrow} 
+        &
+        c_{-\vec k \downarrow}
+    \end{pmatrix},
+    &&
+    \phi_\vec{k} = 
+    \begin{pmatrix}
+        c_{\vec k \uparrow} 
+        &
+        c^\dag_{-\vec k \downarrow}
+    \end{pmatrix},
+\end{align}
+meaning that we can write
+\begin{equation}
+    H = E_0 + \sum_{\vec k} \phi_\vec{k}^\dag \mathcal A_\vec{k} \phi_\vec{k},
+\end{equation}
+where now (minus sign in lower right corner comes from opposite order of operators, due to new basis)
+\begin{equation}
+    \mathcal A_\vec{k}
+    =
+    \begin{pmatrix}
+        \xi_\vec{k}   - h  - 2m (\cos{k_x} - \cos{k_y})& \Delta e^{i \theta}
+        \\
+        \Delta e^{-i \theta} & -\xi_\vec{k} - h  - 2m (\cos{k_x} - \cos{k_y})
+    \end{pmatrix},
+\end{equation}
+where 
+\begin{align}
+    \xi_\vec{k} &= \epsilon_\vec{k} - \mu\\
+    \epsilon_{\vec k} &= -  2t( \cos(k_x) + \cos(k_y)).
+\end{align}
+
+We find eigenvalues through the characteristic equation,
+\begin{equation}
+    |\mathcal A_\vec{k} - \lambda| = 0,
+\end{equation}
+which we solve and find
+\begin{equation}
+    E_{k_x k_y \sigma} = - h  - 2m (\cos{k_x} - \cos{k_y}) + \sigma \sqrt{\xi_\vec{k}^2 + \Delta^2}.
+\end{equation}
+The free energy is 
+\begin{equation}
+    F = E_0 \ldots
+\end{equation}
+\jacob{[COMMENT: yes, it is a very good idea to actually keep both $h$ and the AM term! There could be an interesting interplay there. Experimentally, a tunable $h$ can be realized simply by applying an in-plane magnetic field to a thin film.]}
+\hans{Question: I always struggle with the meaning of in-plane and out-of-plane, what does in-plane refer to here?} \jacob{Answer: in-plane refers to the plane of the superconducting thin film. Since $h$ lies along the $z$-axis in the calculations, it means we have implicitly assumed that the SC film lies in the $xz$ or $yz$-plane. But this seems inconsistent with the fact that we are performing a summation over $k_x,k_y$}
+\hans{We can talk about this in the meeting tomorrow, but I have let the system live in the $xy$-plane, where $x$ is the direction perpendicular to the interfaces (see system Fig. in main.txt) }.
+
+We arrive at the implicit equation
+\begin{equation}
+    g(\Delta) \equiv = 1 - \frac{U}{2 N} \sum_{k_x, k_y} \frac{1 - f(E_{k_x k_y \uparrow}) - f(-E_{k_x k_y \downarrow})}{\sqrt{\xi_\vec{k}^2 + \Delta^2}} = 0,
+\end{equation}
+where $N = N_x N_y$ and where in the zero-temperature limit we are interested in (for the CC limit)
+\begin{equation}
+    \lim_{T \rightarrow 0} f(E) = \lim_{T \rightarrow 0}  (1 + e^{\beta E})^{-1} = \hans{\Theta(-E)}.
+\end{equation} 
+\jacob{[COMMENT: isn't $f(E)$ equal $\theta(-E)$ in the zero temp limit? If you used $\theta(E)$ in the code: does changing it change the results?]}
+\hans{You are of course correct. 
+No, I used f(E) and set the temperature to infinity (python supports this), which makes $f(E)\rightarrow\Theta(-E)$. That also means that it would be easy to also make similar plots for finite temperature.}
+
+\section{Including in-plane magnetic fields}
+Will do the same, but also include $h$-field in $x$- and $y$-directions. I include $h_z$ to keep the derivation general, even though we must set $h_z = 0$ in the end, to avoid creating vortexes.
+Will first do the derivation using the normal BCS interaction, then by assuming spin splitting is so large that the normal state Hamiltonian must first be diagonalized, and then use these operators in the BCS interaction.
+
+\subsection{Using normal BCS interaction}
+We find (See e.g. Linas master thesis)
+
+\begin{align}
+    H_k &= \begin{pmatrix}
+        \mathcal H_k & \bar \Delta\\
+        \bar \Delta^\dag & - \mathcal H_k^*
+    \end{pmatrix}
+    \\
+    \mathcal H_k &= \xi_k \sigma_0 + \vec h \cdot \boldsymbol{\sigma} + M(\vec k) \sigma_z,
+\end{align}
+where $\xi_\vec{k} = - (\mu + 2t \cos(k_x) + 2t \cos(k_y) )$,  $M(\vec k) = - 2m (\cos(k_x) - \cos(k_y)) $, and $\bar \Delta = i \Delta \sigma_y$. For concreteness, we write the $4\times 4$ matrix explicitly:
+
+\begin{equation}
+    H_k = 
+    \begin{pmatrix}
+        \xi_k + h_z + M(\vec k) & h_x - i h_y & 0 & \Delta\\
+        h_x + i h_y & \xi_k - h_z - M(\vec k) & - \Delta & 0\\
+        0 & - \Delta^* & -\xi_k - h_z - M(\vec k)  & - h_x - i h_y\\
+        \Delta^* & 0 & -h_x + i h_y & -\xi_k + h_z + M(\vec k). 
+    \end{pmatrix}
+\end{equation}
+We set $h_y = h_z = 0$, which produces
+\begin{equation}
+    H_k = 
+    \begin{pmatrix}
+        \xi_k  + M(\vec k) & h_x  & 0 & \Delta\\
+        h_x  & \xi_k  - M(\vec k) & - \Delta & 0\\
+        0 & - \Delta^* & -\xi_k  - M(\vec k)  & - h_x \\
+        \Delta^* & 0 & -h_x  & -\xi_k  + M(\vec k). 
+    \end{pmatrix}
+\end{equation}
+The characteristic equation is
+\begin{align}
+    |H_k - E_{\vec k}| = 0,
+\end{align}
+and has the four solutions ($\alpha,\beta = \{-1, 1\}$)
+\begin{equation}
+    E_{\vec{k} \alpha \beta} = \alpha \sqrt{M^{2}+\mathit{hx}^{2}
+    +\xi^{2}+{| \Delta |}^{2}+ 2 \beta  \sqrt{\left({| \Delta |}^{2}+\xi^{2}\right) \left(M^{2}+\mathit{hx}^{2}\right)}}.
+\end{equation}
+Like in Ali's derivation, we find that we have positive/negative energies. This is due to the spin-Nambu basis (we have doubles degrees of freedom, find double the number of eigenvalues).
+% We do the same as him, and take the positive eigenvalues:
+% \begin{equation}
+% \boxed{
+%     E_{\vec{k} \nu} =\sqrt{M^{2}+\mathit{hx}^{2}
+%     +\xi^{2}+{| \Delta |}^{2}+ 2 \nu  \sqrt{\left({| \Delta |}^{2}+\xi^{2}\right) \left(M^{2}+\mathit{hx}^{2}\right)}},
+%     }
+% \end{equation}
+% where $\nu = \pm $ denotes the ''pseudospin'' of the solutions.
+We differentiate by $\Delta$,
+\begin{equation}
+    \frac{d E_{\vec{k} \alpha \beta}}{d\Delta} = 
+    \alpha \Delta \frac{1 + \frac{\beta \sqrt{M^2 + h_x^2}}{\sqrt{(\Delta^2 + \xi_k^2)}}}{\sqrt{M^{2}+\mathit{hx}^{2}
+    +\xi^{2}+{| \Delta |}^{2}+ 2 \nu  \sqrt{\left({| \Delta |}^{2}+\xi^{2}\right) \left(M^{2}+\mathit{hx}^{2}\right)}}}
+\end{equation}
+\subsection{Diagonalizing $
+H_N$ first}
+A crucial point is that we must diagonalize the normal state Hamiltonian first, and then define the superconducting Hamiltonian in terms of the long-lived excitations in the system.
+The normal state Hamiltonian reads
+\begin{equation}
+    H_N =
+		- \sum_{i\sigma} \mu_i c^\dag_{i\sigma} c_{i\sigma}
+		- \sum_{\langle i, j \rangle \sigma} t_{ij} c^\dag_{i\sigma} c_{j\sigma}
+		- \sum_{\langle i, j \rangle \sigma\sigma'} (\bm{m}_{ij} \cdot \boldsymbol{\sigma})_{\sigma\sigma'} c^\dag_{i\sigma} c_{j\sigma'}
+  -
+  \sum_{i, \sigma, \sigma'} [\vec h \cdot \boldsymbol \sigma]_{\sigma \sigma'} c^\dag_{i\sigma} c_{i\sigma'},
+\end{equation}
+where I excluded the constant term due to the magnetic field since this is irrelevant to the gap equation we are interested in. \hans{TODO: maybe include it for completeness in the final article.}
+Using FT, we find
+\begin{align}
+    H_N=& 
+		- \sum_{\vec k \sigma}(\mu + 2t \cos(k_x) + 2t \cos(k_y) ) c^\dag_{\vec k \sigma} c_{\vec k\sigma}
+  -
+    \sum_{\vec k, \sigma, \sigma'} [\vec h \cdot \boldsymbol \sigma]_{\sigma\sigma'} c^\dag_{\vec k \sigma} c_{\vec k \sigma'}
+    \\
+	&
+    -2m \sum_{k_x, k_y} (\cos(k_x) - \cos(k_y)) 
+    c^\dag_{\vec k\sigma} c_{\vec k\sigma'}.
+\end{align}
+We denote by $\xi_\vec{k} = - (\mu + 2t \cos(k_x) + 2t \cos(k_y) )$, and $M(\vec k) = - 2m (\cos(k_x) - \cos(k_y)) $
+To diagonalize this, we only need a spin basis:
+\begin{align}
+    C_k = \begin{pmatrix}
+        c_{k \uparrow} & c_{k \downarrow}
+    \end{pmatrix}
+    &&
+     C_k^\dag = \begin{pmatrix}
+        c_{k \uparrow}^\dag & c_{k \downarrow}^\dag
+    \end{pmatrix}^T,
+\end{align}
+meaning that we can write the Hamiltonian as
+\begin{align}
+    H_N &= \sum_k C_k^\dag \mathcal A_k C_k
+    \\
+    \mathcal A_k &= \xi_k + \vec B_k \cdot \boldsymbol \sigma =  \xi_k \sigma_0 - \vec h \cdot \boldsymbol \sigma + M(\vec k) \sigma_z = 
+    \begin{pmatrix}
+        \xi_k - h_z + M(\vec k) & h_x - i h_y\\
+        h_x + i h_y & \xi_k + h_z - M(\vec k).
+    \end{pmatrix},
+\end{align}
+where $\vec B_k = (-h_x, -h_y, -h_z + M(\vec k))^T$.
+Taking the determinant, we find
+\begin{align}
+    |\mathcal A_k - \lambda| = (\xi_k - \lambda)^2 - (h_z + M(\vec k))^2 - (h_x^2 + h_y^2) = 0.
+\end{align}
+We now simplify, setting $h_z = h_y = 0$. This is because: 
+\begin{itemize}
+    \item $h_z$ will create vortices, so cannot be present (in combination with $M(\vec k)$.
+    \item $h_y$ is analogous to $h_x$, just a rotation.
+\end{itemize}
+Diagonalizing, that is setting $\mathcal A_k = U_k D_k U_k^\dagger$, we find the elements of the diagonal matrix $D$ as
+\begin{equation}
+    E_{k \nu }  \equiv \lambda_\pm = \xi_k \pm \sqrt{M(\vec k)^2 + h_x^2},
+\end{equation}
+and the Hamiltonian can be written 
+\begin{equation}
+    H = \sum_{k \nu} E_{k \nu} \tilde c^\dag_{k \nu} \tilde c_{k \nu}
+\end{equation}
+The eigenvectors are defined as
+\begin{equation}
+    \tilde c_{\nu k} = u_\nu c_{k \uparrow} + v_\nu c_{k \downarrow},
+\end{equation}
+and we find the two eigenvectors ($M_h = \sqrt{M^2 + h_x^2}$
+\begin{equation}
+U = \frac{1}{\sqrt{2}}
+\begin{pmatrix}
+\frac{h_x}{\sqrt{M^{2}-M_h\, M+\mathit{hx}^{2}}} 
+& -\frac{ \mathit{hx}}{ \sqrt{M^{2}+M_h\, M+\mathit{hx}^{2}}} 
+\\
+ \frac{ \left(M_h-M\right)}{\sqrt{M^{2}-M_h\, M+\mathit{hx}^{2}}} 
+ & \frac{ \left(M_h+M\right)}{ \sqrt{M^{2}+M_h\, M+\mathit{hx}^{2}}} 
+\end{pmatrix}
+\end{equation}
+We thus have 
+\begin{align}
+\begin{pmatrix}
+    \tilde c_+
+    \\
+    \tilde c_-
+\end{pmatrix}
+ = U^\dagger 
+ \begin{pmatrix}
+    c_\uparrow
+    \\
+    c_\downarrow
+\end{pmatrix}
+\end{align}
+% where $\nu = \pm$,and we find that (assuming $h_x \neq 0$)
+% \begin{equation}
+%     u = -v\frac{h_x}{\xi_k - M(\vec k) - \lambda_\pm }.
+% \end{equation}
+% Inserting the eigenvalues, we find
+% \begin{align}
+%     u_+ &= v_+ \frac{h_x}{M + \sqrt{M^2 + h_x^2}}
+%     \\
+%     u_- &= v_- \frac{h_x}{M - \sqrt{M^2 + h_x^2}}.
+% \end{align}
+Sanity check: Taking $M \rightarrow 0$ produces the $\sigma_x$-eigenvectors (up to an overall minus sign ) $(1,1)$ and $(-1, 1)$.
+
+We now define the SC mean-field Hamiltonian as ( similar to \url{https://arxiv.org/pdf/cond-mat/0605575.pdf}, but absorb a factor of $1/2$ in $U$. We also have strong spin-splitting on average, even though the Fermi surfaces may touch at isolated points. )
+\hans{This looks more like triplet pairing since the quantum number $\nu = \pm$ is the same in the two operators. I assume this is because the different bands are too far apart.} \hans{We might have to think about whether to define only intraband (as in the article), or also/instead to include interband,}
+\begin{equation}
+    H_{SC} = \sum_{\nu \vec k} \Delta_k \tilde c^\dag_{\nu \vec k} \tilde c^\dag_{\nu -\vec k} + h.c. \, ,
+\end{equation}
+where the order parameter is
+\begin{equation}
+    \Delta_k = 
+\end{equation}
+To understand this, go back to the original basis:
+\begin{align}
+    H_{SC} &= \sum_k \Delta_k^\dag \left[(u c_{k \uparrow} + v c_{k \downarrow},) (u c_{-k \uparrow} + v c_{-k \downarrow})   \right] + h.c.
+    \\
+    &= \sum_k \Delta_k^\dag \left[(u^2 c_{k \uparrow}c_{-k \uparrow} + v^2 c_{k \downarrow} c_{-k \downarrow} + uv c_{k \uparrow} c_{-k \downarrow} + vu c_{k \downarrow} c_{-k \uparrow} \right] + h.c.
+\end{align}
+\hans{Note that even though it looks like the singlet pairing vanishes by anticommuting the operators in the last line above, we must have that $\Delta_k = - \Delta_k$ in this case, in order to satisfy the SPOT rule.}
+Note that $u, v$ are themselves functions of $k$
+To diagonalize this, we need the spin-Nambu 4-vector basis:
+% \begin{align}
+%     \phi_\vec{k}^\dag = 
+%     \begin{pmatrix}
+%         c^\dag_{\vec k \uparrow} 
+%         &
+%         c^\dag_{\vec k \downarrow} 
+%         &
+%         c_{-\vec k \uparrow} 
+%         &
+%         c_{-\vec k \downarrow}
+%     \end{pmatrix},
+%     &&
+%     \phi_\vec{k} = 
+%     \begin{pmatrix}
+%         c_{\vec k \uparrow} 
+%         &
+%         c_{\vec k \downarrow}
+%         &
+%         c^\dag_{-\vec k \uparrow}
+%         &
+%         c^\dag_{-\vec k \downarrow}
+%     \end{pmatrix}^T,
+% \end{align}
+% % Denoting $a = - h - 2m (\cos k_x - \cos k_y)$ and $b = \sqrt{\xi_\vec{k}^2 + \Delta^2}$, we have terms like
+% \begin{equation}
+%     \Theta(a + b) + \Theta(-a + b)
+% \end{equation}
+% First term:
+% \begin{align}
+%     &\xi_\vec{k} c^\dag_{\vec k \sigma} c_{\vec k\sigma}
+%     = 
+%     \frac{1}{2} \xi_\vec{k} [c^\dag_{\vec k \sigma} c_{\vec k\sigma} - c_{\vec k\sigma} c^\dag_{\vec k \sigma} + 1]
+%     \\
+%     &= 
+%     \frac{1}{2}\xi_\vec{k} + \phi^\dag_\vec{k} 
+%     \begin{pmatrix}
+%         \xi_k \sigma_0 & 0
+%         \\
+%         0 & -\xi_k \sigma_0
+%     \end{pmatrix}
+%     \phi^\dag_k,
+% \end{align}
+% where we used $\xi_{-k} = \xi_k$.
+% Similarly for the magnetic terms:
+% \begin{align}
+%     \mathcal A_k = \begin{pmatrix}
+%     \end{pmatrix}
+% \end{align}
+\end{document}
